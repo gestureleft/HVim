@@ -1,7 +1,6 @@
 #include <iostream>
 #include <cstdlib>
 
-#include <cctype>
 #include <unistd.h>
 #include <termios.h>
 #include <sys/ioctl.h>
@@ -29,6 +28,18 @@ void enable_raw_mode(const termios& orig_termios)
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) exit(errno);
 }
 
+std::pair<int,int> get_window_size()
+{
+    winsize ws;
+
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0)
+    {
+        throw 1;
+    } else {
+        return {ws.ws_row, ws.ws_col};
+    }
+}
+
 char editor_read_key()
 {
    std::size_t num_read;
@@ -42,7 +53,7 @@ char editor_read_key()
 
 void editor_draw_rows()
 {
-    for (int y = 0; y < 24; y++)
+    for (int y = 0; y < get_window_size().first; y++)
     {
         write(STDOUT_FILENO, "~\r\n", 3);
     }
@@ -70,25 +81,13 @@ bool process_key_press()
     return true;
 }
 
-std::pair<int,int> get_window_size()
-{
-    winsize ws;
-
-    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0)
-    {
-        throw 1;
-    } else {
-        return {ws.ws_row, ws.ws_col};
-    }
-}
-
 int main()
 {
     EditorConfig editor_config;
     tcgetattr(STDIN_FILENO, &(editor_config.orig_termios));
     enable_raw_mode(editor_config.orig_termios);
 
-    auto row_col = get_window_size();
+    auto [row_count, col_count] = get_window_size();
 
     bool run = true;
     while (run) {

@@ -11,8 +11,6 @@ iostream
 -
 cstdlib
 -
-cctype
--
 unistd.h
 -
 termios.h
