@@ -1,21 +1,19 @@
 #include <iostream>
-#include <stdexcept>
 #include <cstdlib>
 
+
+#include <cctype>
 #include <unistd.h>
 #include <termios.h>
 
-termios orig_termios;
-
-void disableRawMode()
+void disableRawMode(const termios& orig_termios)
 {
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios) == -1) exit(errno);
+    std::cout << "Exiting raw mode" << '\n';
+    std::cout << tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
 }
 
-void enableRawMode()
+void enableRawMode(const termios& orig_termios)
 {
-    std::atexit(disableRawMode);
-
     termios raw = orig_termios;
     raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
     raw.c_oflag &= ~(OPOST);
@@ -29,12 +27,20 @@ void enableRawMode()
 
 int main()
 {
-    enableRawMode();
+    termios orig_termios;
+    enableRawMode(orig_termios);
+    char c = '\0';
     while (1)
     {
-        char c = '\0';
-        if (read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) exit(errno);
-        std::cout << c << '\n';
+        if (read(STDIN_FILENO, &c, 1) != 0 && errno == EAGAIN) break;
+
+        if (iscntrl(c))
+            std::cout << static_cast<int>(c) << '\r' << '\n';
+        else
+            std::cout << '(' << static_cast<int>(c) << "):" << c << '\r' << '\n';
+
+        if (c == 'q') break;
     }
+    disableRawMode(orig_termios);
     return 0;
 }
