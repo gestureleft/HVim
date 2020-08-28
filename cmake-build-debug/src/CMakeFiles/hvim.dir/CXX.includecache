@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/harrison/dev/HVim/src/main.cpp
+iostream
+-
+stdexcept
+-
+cstdlib
+-
+unistd.h
+-
+termios.h
+-
+
