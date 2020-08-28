@@ -1,18 +1,22 @@
 #include <iostream>
 #include <cstdlib>
 
-
 #include <cctype>
 #include <unistd.h>
 #include <termios.h>
+#include <sys/ioctl.h>
 
-inline void disableRawMode(const termios& orig_termios)
+struct EditorConfig
 {
-    std::cout << "disabling raw mode" << '\n';
-    std::cout << tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
+    termios orig_termios;
+};
+
+inline void disable_raw_mode(const termios& orig_termios)
+{
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
 }
 
-void enableRawMode(const termios& orig_termios)
+void enable_raw_mode(const termios& orig_termios)
 {
     termios raw = orig_termios;
     raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
@@ -36,33 +40,61 @@ char editor_read_key()
    return c;
 }
 
-void editor_clear_screen()
+void editor_draw_rows()
+{
+    for (int y = 0; y < 24; y++)
+    {
+        write(STDOUT_FILENO, "~\r\n", 3);
+    }
+}
+
+void editor_refresh_screen()
 {
     write(STDOUT_FILENO, "\x1b[2J", 4); // Clear Screen
     write(STDOUT_FILENO, "\x1b[H", 3);  // Reset Cursor to top left
+    editor_draw_rows();
+    write(STDOUT_FILENO, "\x1b[1;2H", 6);
 }
 
 bool process_key_press()
 {
     char c = editor_read_key();
-    editor_clear_screen();
 
     switch (c)
     {
         case ('q'):
             return false;
         default:
-            write(STDOUT_FILENO, &c, 1);
+            break;
     }
     return true;
 }
 
+std::pair<int,int> get_window_size()
+{
+    winsize ws;
+
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0)
+    {
+        throw 1;
+    } else {
+        return {ws.ws_row, ws.ws_col};
+    }
+}
+
 int main()
 {
-    termios orig_termios;
-    tcgetattr(STDIN_FILENO, &orig_termios);
-    enableRawMode(orig_termios);
-    while ( process_key_press() ) {}
-    disableRawMode(orig_termios);
+    EditorConfig editor_config;
+    tcgetattr(STDIN_FILENO, &(editor_config.orig_termios));
+    enable_raw_mode(editor_config.orig_termios);
+
+    auto row_col = get_window_size();
+
+    bool run = true;
+    while (run) {
+        editor_refresh_screen();
+        run = process_key_press();
+    }
+    disable_raw_mode(editor_config.orig_termios);
     return 0;
 }

@@ -3,6 +3,6 @@ project(hvim)
 
 #add_subdirectory(subdirname)
 set(SOURCE_FILES main.cpp)
-
+add_compile_options(-std=c++2a)
 add_executable(hvim ${SOURCE_FILES})
 #target_link_libraries(link libraries)
