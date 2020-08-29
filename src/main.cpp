@@ -8,6 +8,12 @@
 
 struct EditorConfig
 {
+    struct CursorPosition
+    {
+        int x;
+        int y;
+    };
+    CursorPosition cursor{};
     termios orig_termios;
 };
 
@@ -102,13 +108,21 @@ std::string editor_draw_rows(const WindowSize& window_dimensions)
     return output;
 }
 
-void editor_refresh_screen()
+void editor_refresh_screen(EditorConfig& editor_config)
 {
     std::string output_str{};
 
     output_str.append("\x1b[?25l"); // Hide the cursor
     output_str.append("\x1b[H");    // Reset Cursor to top left
     output_str.append(editor_draw_rows(get_window_size())); // Draw the content
+
+    std::string move_cursor{"\x1b[y;xH"};
+    std::string curs_x = std::to_string(editor_config.cursor.x + 1);
+    std::string curs_y = std::to_string(editor_config.cursor.y + 1);
+    move_cursor.replace(4, curs_x.length(), curs_x);
+    move_cursor.replace(2, curs_y.length(), curs_y);
+    output_str.append(move_cursor);
+
     output_str.append("\x1b[H");    // Reset Cursor to top left
     output_str.append("\x1b[?25h"); // Show the cursor
 
@@ -141,7 +155,7 @@ int main()
 
     bool run = true;
     while (run) {
-        editor_refresh_screen();
+        editor_refresh_screen(editor_config);
         run = process_key_press();
     }
     disable_raw_mode(editor_config.orig_termios);
