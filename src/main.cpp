@@ -11,6 +11,14 @@ struct EditorConfig
     termios orig_termios;
 };
 
+struct WindowSize
+{
+    int width;
+    int height;
+};
+
+const std::string VERSION = "0.0.1";
+
 inline void disable_raw_mode(const termios& orig_termios)
 {
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
@@ -40,7 +48,7 @@ char editor_read_key()
    return c;
 }
 
-std::pair<int,int> get_cursor_position()
+WindowSize get_cursor_position()
 {
     if (write(STDOUT_FILENO, "\x1b[6n", 4) != 4) throw std::ios_base::failure(""); // Request cursor position
     // The reply is in the form: \x1b[n;mR, where n is the row and m is the column
@@ -55,13 +63,13 @@ std::pair<int,int> get_cursor_position()
     }
 
     if (in_chars.at(0) != '\x1b' || in_chars.at(1) != '[') throw std::ios_base::failure("");
-    std::pair<int,int> cursor_pos{};
-    if (std::sscanf(&in_chars.at(2), "%d;%d", &cursor_pos.first, &cursor_pos.second) != 2) throw std::ios_base::failure("");
+    WindowSize cursor_pos{};
+    if (std::sscanf(&in_chars.at(2), "%d;%d", &(cursor_pos.height), &(cursor_pos.width)) != 2) throw std::ios_base::failure("");
 
     return cursor_pos;
 }
 
-std::pair<int,int> get_window_size()
+WindowSize get_window_size()
 {
     winsize ws;
 
@@ -71,33 +79,36 @@ std::pair<int,int> get_window_size()
         if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) throw std::ios_base::failure("");
         return get_cursor_position();
     } else {
-        return {ws.ws_row, ws.ws_col};
+        return {ws.ws_col, ws.ws_row};
     }
 }
 
-std::string editor_draw_rows(const size_t& height)
+std::string editor_draw_rows(const WindowSize& window_dimensions)
 {
-    std::string y_str{};
     std::string output{};
-    for (int y = 0; y < height - 1; y++)
+    for (int y = 0; y < window_dimensions.height; y++)
     {
-        y_str = std::to_string(y);
-        output.append(y_str);
+        output.append("~");
+        if (y == window_dimensions.height/3) {
+            std::string welcome_no_padding = "Welcome to HVim -- Version ";
+            welcome_no_padding.append(VERSION);
+            std::string welcome((window_dimensions.width - welcome_no_padding.length()) / 2,' ');
+            welcome.append(welcome_no_padding);
+            output.append(welcome);
+        }
         output.append("\x1b[K"); // Clear the old contents from the line
-        output.append("\r\n");
+        if (y < window_dimensions.height - 1) output.append("\r\n");
     }
-    output.append("xxxxxxx");
     return output;
 }
 
 void editor_refresh_screen()
 {
     std::string output_str{};
-    std::pair<int,int> window_size = get_window_size();
 
     output_str.append("\x1b[?25l"); // Hide the cursor
     output_str.append("\x1b[H");    // Reset Cursor to top left
-    output_str.append(editor_draw_rows(window_size.first)); // Draw the content
+    output_str.append(editor_draw_rows(get_window_size())); // Draw the content
     output_str.append("\x1b[H");    // Reset Cursor to top left
     output_str.append("\x1b[?25h"); // Show the cursor
 
