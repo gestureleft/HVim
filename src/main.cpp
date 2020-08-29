@@ -75,25 +75,33 @@ std::pair<int,int> get_window_size()
     }
 }
 
-void editor_draw_rows(const size_t& height)
+std::string editor_draw_rows(const size_t& height)
 {
     std::string y_str{};
+    std::string output{};
     for (int y = 0; y < height - 1; y++)
     {
         y_str = std::to_string(y);
-        write(STDOUT_FILENO, y_str.c_str(), sizeof(y));
-        write(STDOUT_FILENO, "\r\n", 2);
+        output.append(y_str);
+        output.append("\x1b[K"); // Clear the old contents from the line
+        output.append("\r\n");
     }
-    write(STDOUT_FILENO, "xxx\r\n", 5);
+    output.append("xxxxxxx");
+    return output;
 }
 
 void editor_refresh_screen()
 {
+    std::string output_str{};
     std::pair<int,int> window_size = get_window_size();
-    write(STDOUT_FILENO, "\x1b[2J", 4); // Clear Screen
-    write(STDOUT_FILENO, "\x1b[H", 3);  // Reset Cursor to top left
-    editor_draw_rows(window_size.first);
-    write(STDOUT_FILENO, "\x1b[1;2H", 6);
+
+    output_str.append("\x1b[?25l"); // Hide the cursor
+    output_str.append("\x1b[H");    // Reset Cursor to top left
+    output_str.append(editor_draw_rows(window_size.first)); // Draw the content
+    output_str.append("\x1b[H");    // Reset Cursor to top left
+    output_str.append("\x1b[?25h"); // Show the cursor
+
+    write(STDOUT_FILENO, output_str.c_str(), output_str.length());
 }
 
 bool process_key_press()
@@ -117,6 +125,8 @@ int main()
     enable_raw_mode(editor_config.orig_termios);
 
     auto [row_count, col_count] = get_window_size();
+
+    std::string output_string;
 
     bool run = true;
     while (run) {
