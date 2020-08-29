@@ -11,6 +11,8 @@ iostream
 -
 cstdlib
 -
+array
+-
 unistd.h
 -
 termios.h
