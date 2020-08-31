@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <array>
+#include <vector>
 
 #include <unistd.h>
 #include <termios.h>
@@ -58,7 +59,10 @@ struct EditorConfig
         int y;
     };
     CursorPosition cursor{};
+    int view_offset_x;
+    int view_offset_y;
     termios orig_termios;
+    std::vector<std::string> content{};
 
     enum Direction {
         LEFT,
@@ -74,37 +78,36 @@ struct EditorConfig
         switch (direction)
         {
             case LEFT:
-                if (this->cursor.x != 0)
-                    this->cursor.x--;
+                if (cursor.x != 0)
+                    cursor.x--;
                 break;
             case RIGHT:
-                if (this->cursor.x != get_window_size().width - 1)
-                    this->cursor.x++;
+                if (cursor.x != content.at(cursor.y).size() - 1)
+                    cursor.x++;
                 break;
             case UP:
-                if (this->cursor.y != 0)
-                    this->cursor.y--;
+                if (cursor.y != 0)
+                    cursor.y--;
                 break;
             case DOWN:
-                if (this->cursor.y != get_window_size().height - 1)
-                    this->cursor.y++;
+                if (cursor.y != content.size() - 1)
+                    cursor.y++;
                 break;
             case FORWARD:
-                if (this->cursor.x != get_window_size().width - 1)
+                if (cursor.x != content.at(cursor.y).size() - 1)
                 {
-                    this->cursor.x++;
-                } else if (this->cursor.y != get_window_size().height - 1) {
-                    this->cursor.x = 0;
-                    this->cursor.y++;
+                    cursor.x++;
+                } else if (cursor.y != content.size() - 1) {
+                    cursor.x = 0;
+                    cursor.y++;
                 }
                 break;
             case BACK:
-                if (this->cursor.x != 0)
+                if (cursor.x != 0)
                 {
-                    this->cursor.x--;
-                } else if (this->cursor.y != 0) {
-                    this->cursor.x = get_window_size().width - 1;
-                    this->cursor.y--;
+                    cursor.x--;
+                } else if (cursor.y != 0) {
+                    cursor.x = content.at(--cursor.y).size() - 1;
                 }
                 break;
         }
@@ -142,17 +145,23 @@ char editor_read_key()
    return c;
 }
 
-std::string editor_draw_rows(const WindowSize& window_dimensions)
+std::string editor_draw_rows(const EditorConfig& editor_config, const WindowSize& window_dimensions)
 {
     std::string output{};
     for (int y = 0; y < window_dimensions.height; y++)
     {
-        output.append("~");
-        if (y == window_dimensions.height/3) {
-            std::string welcome_no_padding = "Welcome to HVim -- Version " + VERSION;
-            std::string welcome((window_dimensions.width - welcome_no_padding.length()) / 2,' ');
-            welcome.append(welcome_no_padding);
-            output.append(welcome);
+        if (y < editor_config.content.size())
+        {
+            output.append(editor_config.content.at(y + editor_config.view_offset_y));
+        } else {
+            output.append("~");
+            if (y == window_dimensions.height/3) {
+                std::string welcome_no_padding = "Welcome to HVim -- Version " + VERSION;
+                std::string welcome((window_dimensions.width - welcome_no_padding.length()) / 2,' ');
+                welcome.append(welcome_no_padding);
+                output.append(welcome);
+            }
+
         }
         output.append("\x1b[K"); // Clear the old contents from the line
         if (y < window_dimensions.height - 1) output.append("\r\n");
@@ -166,7 +175,7 @@ void editor_refresh_screen(EditorConfig& editor_config)
 
     output_str.append("\x1b[?25l"); // Hide the cursor
     output_str.append("\x1b[H");    // Reset Cursor to top left
-    output_str.append(editor_draw_rows(get_window_size())); // Draw the content
+    output_str.append(editor_draw_rows(editor_config, get_window_size())); // Draw the content
 
     std::string move_cursor{"\x1b["};
     move_cursor += std::to_string(editor_config.cursor.y + 1) + ";" + std::to_string(editor_config.cursor.x + 1) + "H";
@@ -210,17 +219,19 @@ bool process_key_press(EditorConfig& editor_config)
     return true;
 }
 
+std::vector<std::string> open_file()
+{
+    return { "Hello World", "A second line" };
+}
+
 int main()
 {
     EditorConfig editor_config;
     tcgetattr(STDIN_FILENO, &(editor_config.orig_termios));
     enable_raw_mode(editor_config.orig_termios);
+    editor_config.content = open_file();
 
     log_descr = open("/Users/harrisonmarshall/dev/HVim/log", O_WRONLY);
-
-    auto [row_count, col_count] = get_window_size();
-
-    std::string output_string;
 
     bool run = true;
     while (run) {
