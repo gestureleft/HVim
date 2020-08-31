@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <array>
 #include <vector>
+#include <fstream>
 
 #include <unistd.h>
 #include <termios.h>
@@ -75,6 +76,8 @@ struct EditorConfig
 
     void move_cursor(Direction direction)
     {
+        if (content.empty())
+            return;
         switch (direction)
         {
             case LEFT:
@@ -86,12 +89,18 @@ struct EditorConfig
                     cursor.x++;
                 break;
             case UP:
-                if (cursor.y != 0)
+                if (cursor.y != 0) {
                     cursor.y--;
+                    if (cursor.x >= content.at(cursor.y).size())
+                        cursor.x = content.at(cursor.y).size() - 1;
+                }
                 break;
             case DOWN:
-                if (cursor.y != content.size() - 1)
+                if (cursor.y != content.size() - 1) {
                     cursor.y++;
+                    if (cursor.x >= content.at(cursor.y).size())
+                        cursor.x = content.at(cursor.y).size() - 1;
+                }
                 break;
             case FORWARD:
                 if (cursor.x != content.at(cursor.y).size() - 1)
@@ -155,7 +164,7 @@ std::string editor_draw_rows(const EditorConfig& editor_config, const WindowSize
             output.append(editor_config.content.at(y + editor_config.view_offset_y));
         } else {
             output.append("~");
-            if (y == window_dimensions.height/3) {
+            if (editor_config.content.empty() && y == window_dimensions.height/3) {
                 std::string welcome_no_padding = "Welcome to HVim -- Version " + VERSION;
                 std::string welcome((window_dimensions.width - welcome_no_padding.length()) / 2,' ');
                 welcome.append(welcome_no_padding);
@@ -179,7 +188,6 @@ void editor_refresh_screen(EditorConfig& editor_config)
 
     std::string move_cursor{"\x1b["};
     move_cursor += std::to_string(editor_config.cursor.y + 1) + ";" + std::to_string(editor_config.cursor.x + 1) + "H";
-    write(log_descr, move_cursor.c_str(), move_cursor.length());
     output_str.append(move_cursor);
 
     output_str.append("\x1b[?25h"); // Show the cursor
@@ -219,17 +227,27 @@ bool process_key_press(EditorConfig& editor_config)
     return true;
 }
 
-std::vector<std::string> open_file()
+std::vector<std::string> open_file(const char* file_path)
 {
-    return { "Hello World", "A second line" };
+    std::vector<std::string> output{};
+    std::ifstream a_file(file_path);
+    std::string str{};
+    while (std::getline(a_file, str))
+    {
+        if (str.size() > 0)
+            output.emplace_back(str);
+    }
+    a_file.close();
+    return output;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
     EditorConfig editor_config;
     tcgetattr(STDIN_FILENO, &(editor_config.orig_termios));
     enable_raw_mode(editor_config.orig_termios);
-    editor_config.content = open_file();
+    if (argc > 1)
+        editor_config.content = open_file(argv[1]);
 
     log_descr = open("/Users/harrisonmarshall/dev/HVim/log", O_WRONLY);
 
