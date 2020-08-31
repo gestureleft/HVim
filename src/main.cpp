@@ -64,7 +64,9 @@ struct EditorConfig
         LEFT,
         RIGHT,
         UP,
-        DOWN
+        DOWN,
+        FORWARD,
+        BACK
     };
 
     void move_cursor(Direction direction)
@@ -86,6 +88,24 @@ struct EditorConfig
             case DOWN:
                 if (this->cursor.y != get_window_size().height - 1)
                     this->cursor.y++;
+                break;
+            case FORWARD:
+                if (this->cursor.x != get_window_size().width - 1)
+                {
+                    this->cursor.x++;
+                } else if (this->cursor.y != get_window_size().height - 1) {
+                    this->cursor.x = 0;
+                    this->cursor.y++;
+                }
+                break;
+            case BACK:
+                if (this->cursor.x != 0)
+                {
+                    this->cursor.x--;
+                } else if (this->cursor.y != 0) {
+                    this->cursor.x = get_window_size().width - 1;
+                    this->cursor.y--;
+                }
                 break;
         }
     }
@@ -167,16 +187,22 @@ bool process_key_press(EditorConfig& editor_config)
         case ('q'):
             return false;
         case ('h'):
-            editor_config.move_cursor(EditorConfig::Direction::LEFT);
+            editor_config.move_cursor(EditorConfig::LEFT);
             break;
         case ('j'):
-            editor_config.move_cursor(EditorConfig::Direction::DOWN);
+            editor_config.move_cursor(EditorConfig::DOWN);
             break;
         case ('k'):
-            editor_config.move_cursor(EditorConfig::Direction::UP);
+            editor_config.move_cursor(EditorConfig::UP);
             break;
         case ('l'):
-            editor_config.move_cursor(EditorConfig::Direction::RIGHT);
+            editor_config.move_cursor(EditorConfig::RIGHT);
+            break;
+        case (' '):
+            editor_config.move_cursor(EditorConfig::FORWARD);
+            break;
+        case (127):
+            editor_config.move_cursor(EditorConfig::BACK);
             break;
         default:
             break;
