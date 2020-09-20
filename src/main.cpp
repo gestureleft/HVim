@@ -3,6 +3,7 @@
 #include <array>
 #include <vector>
 #include <fstream>
+#include <map>
 
 #include <unistd.h>
 #include <termios.h>
@@ -13,6 +14,29 @@ struct WindowSize
 {
     int width;
     int height;
+};
+
+enum Direction {
+    LEFT,
+    RIGHT,
+    UP,
+    DOWN,
+    FORWARD,
+    BACK
+};
+
+namespace Constants
+{
+    const std::string VERSION = "0.0.1";
+    const std::array<char, 6> nav_keys = {'h', 'j', 'k', 'l', ' ', 127};
+    const std::map<char, Direction> nav_key_bindings = {
+            {nav_keys.at(0), LEFT},
+            {nav_keys.at(1), DOWN},
+            {nav_keys.at(2), UP},
+            {nav_keys.at(3), RIGHT},
+            {nav_keys.at(4), FORWARD},
+            {nav_keys.at(5), BACK}
+    };
 };
 
 WindowSize get_cursor_position()
@@ -50,78 +74,42 @@ WindowSize get_window_size()
     }
 }
 
-struct EditorConfig
+struct CursorPosition
 {
-    struct CursorPosition
-    {
-        int x;
-        int y;
-    };
-    CursorPosition cursor{};
-    int view_offset_x;
-    int view_offset_y;
-    termios orig_termios;
-    std::vector<std::string> content{};
-
-    enum Direction {
-        LEFT,
-        RIGHT,
-        UP,
-        DOWN,
-        FORWARD,
-        BACK
-    };
-
-    void move_cursor(Direction direction)
-    {
-        if (content.empty())
-            return;
-        switch (direction)
-        {
-            case LEFT:
-                if (cursor.x != 0)
-                    cursor.x--;
-                break;
-            case RIGHT:
-                if (cursor.x != content.at(cursor.y).size() - 1)
-                    cursor.x++;
-                break;
-            case UP:
-                if (cursor.y != 0) {
-                    cursor.y--;
-                    if (cursor.x >= content.at(cursor.y).size())
-                        cursor.x = content.at(cursor.y).size() - 1;
-                }
-                break;
-            case DOWN:
-                if (cursor.y != content.size() - 1) {
-                    cursor.y++;
-                    if (cursor.x >= content.at(cursor.y).size())
-                        cursor.x = content.at(cursor.y).size() - 1;
-                }
-                break;
-            case FORWARD:
-                if (cursor.x != content.at(cursor.y).size() - 1)
-                {
-                    cursor.x++;
-                } else if (cursor.y != content.size() - 1) {
-                    cursor.x = 0;
-                    cursor.y++;
-                }
-                break;
-            case BACK:
-                if (cursor.x != 0)
-                {
-                    cursor.x--;
-                } else if (cursor.y != 0) {
-                    cursor.x = content.at(--cursor.y).size() - 1;
-                }
-                break;
-        }
-    }
+    int x;
+    int y;
 };
 
-const std::string VERSION = "0.0.1";
+
+CursorPosition move_cursor(CursorPosition c, Direction d)
+{
+    switch(d)
+    {
+        case LEFT: {
+            return {c.x - 1, c.y};
+        }
+        case RIGHT: {
+            return {c.x + 1, c.y};
+        }
+        case UP: {
+            return {c.x, c.y - 1};
+        }
+        case DOWN: {
+            return {c.x, c.y + 1};
+        }
+        default:
+            return c;
+    }
+}
+
+struct EditorConfig
+{
+    CursorPosition cursor;
+    int view_offset_x;
+    int view_offset_y;
+    std::vector<std::string> content;
+    bool do_run = true;
+};
 
 char editor_read_key()
 {
@@ -145,7 +133,7 @@ std::string editor_draw_rows(const EditorConfig& editor_config, const WindowSize
         } else {
             output.append("~");
             if (editor_config.content.empty() && y == window_dimensions.height/3) {
-                std::string welcome_no_padding = "Welcome to HVim -- Version " + VERSION;
+                std::string welcome_no_padding = "Welcome to HVim -- Version " + Constants::VERSION;
                 std::string welcome((window_dimensions.width - welcome_no_padding.length()) / 2,' ');
                 welcome.append(welcome_no_padding);
                 output.append(welcome);
@@ -175,36 +163,42 @@ void editor_refresh_screen(EditorConfig& editor_config)
     write(STDOUT_FILENO, output_str.c_str(), output_str.length());
 }
 
-bool process_key_press(EditorConfig& editor_config)
+template<typename T, size_t v>
+bool contains(const std::array<T,v> arr, T val)
 {
-    char c = editor_read_key();
-
-    switch (c)
+    for (T el: arr)
     {
-        case ('q'):
-            return false;
-        case ('h'):
-            editor_config.move_cursor(EditorConfig::LEFT);
-            break;
-        case ('j'):
-            editor_config.move_cursor(EditorConfig::DOWN);
-            break;
-        case ('k'):
-            editor_config.move_cursor(EditorConfig::UP);
-            break;
-        case ('l'):
-            editor_config.move_cursor(EditorConfig::RIGHT);
-            break;
-        case (' '):
-            editor_config.move_cursor(EditorConfig::FORWARD);
-            break;
-        case (127):
-            editor_config.move_cursor(EditorConfig::BACK);
-            break;
-        default:
-            break;
+        if (el == val) return true;
     }
-    return true;
+    return false;
+}
+
+Direction get_move_direction(const char c)
+{
+    return Constants::nav_key_bindings.at(c);
+}
+
+/**
+ * Given a cursor and an editor config, checks if the cursor is a valid position for the editor, if so, return a new
+ * editor config with the cursor position applied, else, return the original editor config
+ * @param e the editor config
+ * @param curs the cursor
+ */
+EditorConfig validate_cursor(const EditorConfig& e, const CursorPosition& curs)
+{
+    if (curs.x > -1 &&
+        curs.x < e.content.at(curs.y).size() &&
+        curs.y > -1 &&
+        curs.y < e.content.size())
+        return {curs, e.view_offset_x, e.view_offset_y, e.content, e.do_run};
+    return e;
+}
+
+EditorConfig process_key_press(const EditorConfig& e, const char c)
+{
+    if (contains(Constants::nav_keys, c)) return validate_cursor(e, move_cursor(e.cursor, get_move_direction(c)));
+    if (c == 'q') return {e.cursor, e.view_offset_x, e.view_offset_y, e.content, false};
+    return e;
 }
 
 /**
@@ -267,21 +261,25 @@ termios set_termios_attr(const termios& t)
         t;
 }
 
+EditorConfig handle_new_file(const EditorConfig& e, const char* file_path)
+{
+    return {e.cursor, e.view_offset_x, e.view_offset_y, open_file(file_path), e.do_run};
+}
+
 int main(int argc, char* argv[])
 {
-    EditorConfig editor_config;
+    EditorConfig editor_config{};
 
     const termios orig_term = get_curr_termios();
     const termios raw_term = make_raw_termios(orig_term);
     set_termios_attr(raw_term);
 
     if (argc > 1)
-        editor_config.content = open_file(argv[1]);
+        editor_config = handle_new_file(editor_config, argv[1]);
 
-    bool run = true;
-    while (run) {
+    while (editor_config.do_run) {
         editor_refresh_screen(editor_config);
-        run = process_key_press(editor_config);
+        editor_config = process_key_press(editor_config, editor_read_key());
     }
     set_termios_attr(orig_term);
     return 0;
