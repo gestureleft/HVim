@@ -7,9 +7,7 @@
 #include <unistd.h>
 #include <termios.h>
 #include <sys/ioctl.h>
-#include <fcntl.h>
-
-int log_descr;
+#include <optional>
 
 struct WindowSize
 {
@@ -125,24 +123,6 @@ struct EditorConfig
 
 const std::string VERSION = "0.0.1";
 
-inline void disable_raw_mode(const termios& orig_termios)
-{
-    tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
-}
-
-void enable_raw_mode(const termios& orig_termios)
-{
-    termios raw = orig_termios;
-    raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
-    raw.c_oflag &= ~(OPOST);
-    raw.c_cflag |= (CS8);
-    raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
-    raw.c_cc[VMIN] = 0;
-    raw.c_cc[VTIME] = 1;
-
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1) exit(errno);
-}
-
 char editor_read_key()
 {
    std::size_t num_read;
@@ -227,6 +207,11 @@ bool process_key_press(EditorConfig& editor_config)
     return true;
 }
 
+/**
+ * Given a path to a file, returns a vector of strings, where each string is a line of the file.
+ * @param file_path the path to the file
+ * @return a vector of strings, where each string is a line in the file
+ */
 std::vector<std::string> open_file(const char* file_path)
 {
     std::vector<std::string> output{};
@@ -241,21 +226,63 @@ std::vector<std::string> open_file(const char* file_path)
     return output;
 }
 
+/**
+ * Get the current termios struct for STDIN. The output of this function is dependant on the state of STDIN.
+ * @return the current termios struct
+ */
+termios get_curr_termios()
+{
+    termios term{};
+    tcgetattr(STDIN_FILENO, &term);
+    return term;
+}
+
+/**
+ * Given a termios struct, return a new termios struct that is that termios struct set in raw mode
+ * @param t the termios struct
+ * @return a new termios struct that is set to raw mode
+ */
+termios make_raw_termios(const termios& t)
+{
+    termios new_t = t;
+    new_t.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
+    new_t.c_oflag &= ~(OPOST);
+    new_t.c_cflag |= (CS8);
+    new_t.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
+    new_t.c_cc[VMIN] = 0;
+    new_t.c_cc[VTIME] = 1;
+
+    return new_t;
+}
+
+/**
+ * Given a termios struct, set the STDIN stream attributes to that struct, and returns the original struct, unchanged
+ * @param t the termios struct
+ * @return returns the same termios struct, unmodified
+ */
+termios set_termios_attr(const termios& t)
+{
+    return tcsetattr(STDIN_FILENO, TCSAFLUSH, &t) == -1 ?
+        throw std::exception() :
+        t;
+}
+
 int main(int argc, char* argv[])
 {
     EditorConfig editor_config;
-    tcgetattr(STDIN_FILENO, &(editor_config.orig_termios));
-    enable_raw_mode(editor_config.orig_termios);
+
+    const termios orig_term = get_curr_termios();
+    const termios raw_term = make_raw_termios(orig_term);
+    set_termios_attr(raw_term);
+
     if (argc > 1)
         editor_config.content = open_file(argv[1]);
-
-    log_descr = open("/Users/harrisonmarshall/dev/HVim/log", O_WRONLY);
 
     bool run = true;
     while (run) {
         editor_refresh_screen(editor_config);
         run = process_key_press(editor_config);
     }
-    disable_raw_mode(editor_config.orig_termios);
+    set_termios_attr(orig_term);
     return 0;
 }
