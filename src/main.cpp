@@ -39,6 +39,21 @@ namespace Constants
     };
 };
 
+struct CursorPosition
+{
+    int x;
+    int y;
+};
+
+struct EditorConfig
+{
+    CursorPosition cursor;
+    int view_offset_x;
+    int view_offset_y;
+    std::vector<std::string> content;
+    bool do_run = true;
+};
+
 WindowSize get_cursor_position()
 {
     if (write(STDOUT_FILENO, "\x1b[6n", 4) != 4) throw std::ios_base::failure(""); // Request cursor position
@@ -74,42 +89,51 @@ WindowSize get_window_size()
     }
 }
 
-struct CursorPosition
+CursorPosition move_cursor(const EditorConfig& e, Direction d)
 {
-    int x;
-    int y;
-};
-
-
-CursorPosition move_cursor(CursorPosition c, Direction d)
-{
+    const CursorPosition& c = e.cursor;
     switch(d)
     {
         case LEFT: {
-            return {c.x - 1, c.y};
+            if (c.x > 0)
+                return {c.x - 1, c.y};
+            return c;
         }
         case RIGHT: {
-            return {c.x + 1, c.y};
+            if (c.x < e.content.at(c.y).length() - 1)
+                return {c.x + 1, c.y};
+            return c;
         }
         case UP: {
-            return {c.x, c.y - 1};
+            if (c.y > 0)
+                return {c.x, c.y - 1};
+            return c;
         }
         case DOWN: {
-            return {c.x, c.y + 1};
+            if (c.y < e.content.size() - 1)
+                return {c.x, c.y + 1};
+            return c;
+        }
+        case FORWARD: {
+            if (c.x < e.content.at(c.y).length() - 1)
+                return {c.x + 1, c.y};
+            return {0, c.y + 1};
+        }
+        case BACK: {
+            if (c.x > 0)
+                return {c.x - 1, c.y};
+            if (c.y > 0 && e.content.at(c.y - 1).length() > 0)
+                return {static_cast<int>(e.content.at(c.y - 1).size() - 1), c.y - 1};
+            if (c.y > 0)
+                return {0, c.y - 1};
+            return {0, 0};
         }
         default:
             return c;
     }
 }
 
-struct EditorConfig
-{
-    CursorPosition cursor;
-    int view_offset_x;
-    int view_offset_y;
-    std::vector<std::string> content;
-    bool do_run = true;
-};
+
 
 char editor_read_key()
 {
@@ -178,25 +202,10 @@ Direction get_move_direction(const char c)
     return Constants::nav_key_bindings.at(c);
 }
 
-/**
- * Given a cursor and an editor config, checks if the cursor is a valid position for the editor, if so, return a new
- * editor config with the cursor position applied, else, return the original editor config
- * @param e the editor config
- * @param curs the cursor
- */
-EditorConfig validate_cursor(const EditorConfig& e, const CursorPosition& curs)
-{
-    if (curs.x > -1 &&
-        curs.x < e.content.at(curs.y).size() &&
-        curs.y > -1 &&
-        curs.y < e.content.size())
-        return {curs, e.view_offset_x, e.view_offset_y, e.content, e.do_run};
-    return e;
-}
-
 EditorConfig process_key_press(const EditorConfig& e, const char c)
 {
-    if (contains(Constants::nav_keys, c)) return validate_cursor(e, move_cursor(e.cursor, get_move_direction(c)));
+    if (contains(Constants::nav_keys, c))
+        return {move_cursor(e, get_move_direction(c)), e.view_offset_x, e.view_offset_y, e.content, e.do_run};
     if (c == 'q') return {e.cursor, e.view_offset_x, e.view_offset_y, e.content, false};
     return e;
 }
