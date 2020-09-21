@@ -7,3 +7,7 @@
 cmake-*
 
 cmake_install*
+
+CMakeFiles
+
+src/CMakeFiles
