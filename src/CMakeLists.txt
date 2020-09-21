@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.2)
-project(hvim)
 
-#add_subdirectory(subdirname)
-set(SOURCE_FILES main.cpp)
+project(HVimSrc)
+
+set(SOURCE_FILES main.cpp EditorConfig.h)
+
 add_compile_options(-std=c++2a)
+add_compile_options(-Wall)
+
 add_executable(hvim ${SOURCE_FILES})
-#target_link_libraries(link libraries)

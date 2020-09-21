@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/harrisonmarshall/dev/HVim/src/EditorConfig.h
+
+/Users/harrisonmarshall/dev/HVim/src/main.cpp
+iostream
+-
+cstdlib
+-
+array
+-
+vector
+-
+fstream
+-
+map
+-
+unistd.h
+-
+termios.h
+-
+sys/ioctl.h
+-
+optional
+-
+EditorConfig.h
+/Users/harrisonmarshall/dev/HVim/src/EditorConfig.h
+

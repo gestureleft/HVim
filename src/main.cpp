@@ -10,20 +10,7 @@
 #include <sys/ioctl.h>
 #include <optional>
 
-struct WindowSize
-{
-    int width;
-    int height;
-};
-
-enum Direction {
-    LEFT,
-    RIGHT,
-    UP,
-    DOWN,
-    FORWARD,
-    BACK
-};
+#include "EditorConfig.h"
 
 namespace Constants
 {
@@ -74,43 +61,6 @@ WindowSize get_window_size()
     }
 }
 
-struct CursorPosition
-{
-    int x;
-    int y;
-};
-
-
-CursorPosition move_cursor(CursorPosition c, Direction d)
-{
-    switch(d)
-    {
-        case LEFT: {
-            return {c.x - 1, c.y};
-        }
-        case RIGHT: {
-            return {c.x + 1, c.y};
-        }
-        case UP: {
-            return {c.x, c.y - 1};
-        }
-        case DOWN: {
-            return {c.x, c.y + 1};
-        }
-        default:
-            return c;
-    }
-}
-
-struct EditorConfig
-{
-    CursorPosition cursor;
-    int view_offset_x;
-    int view_offset_y;
-    std::vector<std::string> content;
-    bool do_run = true;
-};
-
 char editor_read_key()
 {
    std::size_t num_read;
@@ -127,12 +77,12 @@ std::string editor_draw_rows(const EditorConfig& editor_config, const WindowSize
     std::string output{};
     for (int y = 0; y < window_dimensions.height; y++)
     {
-        if (y < editor_config.content.size())
+        if (y < editor_config.m_content.size())
         {
-            output.append(editor_config.content.at(y + editor_config.view_offset_y));
+            output.append(editor_config.m_content.at(y + editor_config.m_view_offset_y));
         } else {
             output.append("~");
-            if (editor_config.content.empty() && y == window_dimensions.height/3) {
+            if (editor_config.m_content.empty() && y == window_dimensions.height/3) {
                 std::string welcome_no_padding = "Welcome to HVim -- Version " + Constants::VERSION;
                 std::string welcome((window_dimensions.width - welcome_no_padding.length()) / 2,' ');
                 welcome.append(welcome_no_padding);
@@ -146,7 +96,7 @@ std::string editor_draw_rows(const EditorConfig& editor_config, const WindowSize
     return output;
 }
 
-void editor_refresh_screen(EditorConfig& editor_config)
+void editor_refresh_screen(const EditorConfig& editor_config)
 {
     std::string output_str{};
 
@@ -155,7 +105,7 @@ void editor_refresh_screen(EditorConfig& editor_config)
     output_str.append(editor_draw_rows(editor_config, get_window_size())); // Draw the content
 
     std::string move_cursor{"\x1b["};
-    move_cursor += std::to_string(editor_config.cursor.y + 1) + ";" + std::to_string(editor_config.cursor.x + 1) + "H";
+    move_cursor += std::to_string(editor_config.m_cursor.y + 1) + ";" + std::to_string(editor_config.m_cursor.x + 1) + "H";
     output_str.append(move_cursor);
 
     output_str.append("\x1b[?25h"); // Show the cursor
@@ -187,17 +137,18 @@ Direction get_move_direction(const char c)
 EditorConfig validate_cursor(const EditorConfig& e, const CursorPosition& curs)
 {
     if (curs.x > -1 &&
-        curs.x < e.content.at(curs.y).size() &&
+        curs.x < e.m_content.at(curs.y).size() &&
         curs.y > -1 &&
-        curs.y < e.content.size())
-        return {curs, e.view_offset_x, e.view_offset_y, e.content, e.do_run};
+        curs.y < e.m_content.size())
+        return {curs, e.m_view_offset_x, e.m_view_offset_y, e.m_content, e.m_do_run};
     return e;
 }
 
 EditorConfig process_key_press(const EditorConfig& e, const char c)
 {
-    if (contains(Constants::nav_keys, c)) return validate_cursor(e, move_cursor(e.cursor, get_move_direction(c)));
-    if (c == 'q') return {e.cursor, e.view_offset_x, e.view_offset_y, e.content, false};
+    if (contains(Constants::nav_keys, c))
+        return EditorConfig(move_cursor(e, get_move_direction(c)), e.m_view_offset_x, e.m_view_offset_y, e.m_content, e.m_do_run);
+    if (c == 'q') return EditorConfig(e.m_cursor, e.m_view_offset_x, e.m_view_offset_y, e.m_content, false);
     return e;
 }
 
@@ -261,26 +212,30 @@ termios set_termios_attr(const termios& t)
         t;
 }
 
-EditorConfig handle_new_file(const EditorConfig& e, const char* file_path)
+EditorConfig handle_new_file(const char* file_path)
 {
-    return {e.cursor, e.view_offset_x, e.view_offset_y, open_file(file_path), e.do_run};
+    return EditorConfig({0, 0}, 0, 0, open_file(file_path), true);
+}
+
+void hvim(const EditorConfig& editor_config)
+{
+    editor_refresh_screen(editor_config);
+    if (editor_config.m_do_run)
+        hvim(process_key_press(editor_config, editor_read_key()));
 }
 
 int main(int argc, char* argv[])
 {
-    EditorConfig editor_config{};
 
     const termios orig_term = get_curr_termios();
     const termios raw_term = make_raw_termios(orig_term);
     set_termios_attr(raw_term);
 
     if (argc > 1)
-        editor_config = handle_new_file(editor_config, argv[1]);
+        hvim(handle_new_file(argv[1]));
+    else
+        hvim(EditorConfig({0, 0}, 0, 0, {}, true));
 
-    while (editor_config.do_run) {
-        editor_refresh_screen(editor_config);
-        editor_config = process_key_press(editor_config, editor_read_key());
-    }
     set_termios_attr(orig_term);
     return 0;
 }
