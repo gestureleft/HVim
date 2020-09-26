@@ -108,9 +108,11 @@ Vector move_cursor(const EditorConfig& e, Direction d)
  */
 Vector update_offset(const Vector& offset, const Vector& cursor)
 {
-    // TODO - Implement scrolling up
+    // TODO - Implement scrolling sideways
     if (get_window_size().height - cursor.y + offset.y < DISTANCE_TO_SCROLL)
         return {offset.x, offset.y + 1};
+    if (cursor.y > DISTANCE_TO_SCROLL - 1 && cursor.y - offset.y < DISTANCE_TO_SCROLL)
+        return {offset.x, offset.y - 1};
     return offset;
 }
 
