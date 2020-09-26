@@ -34,18 +34,25 @@ struct EditorConfig
     const int m_view_offset_y;
     const std::vector<std::string> m_content;
     const bool m_do_run;
-    EditorConfig(const CursorPosition& cursor,
-                 const int& view_offset_x,
-                 const int& view_offset_y,
-                 const std::vector<std::string>& content,
-                 const bool& do_run)
-                 : m_cursor(CursorPosition(cursor.x, cursor.y)),
-                   m_view_offset_x(view_offset_x),
-                   m_view_offset_y(view_offset_y),
-                   m_content(content),
-                   m_do_run(do_run) {}
+//    EditorConfig(const CursorPosition& cursor,
+//                 const int& view_offset_x,
+//                 const int& view_offset_y,
+//                 const std::vector<std::string>& content,
+//                 const bool& do_run)
+//                 : m_cursor(CursorPosition(cursor.x, cursor.y)),
+//                   m_view_offset_x(view_offset_x),
+//                   m_view_offset_y(view_offset_y),
+//                   m_content(content),
+//                   m_do_run(do_run) {}
 };
 
+/**
+ * Given an EditorConfig and a navigation direction, return a new EditorConfig with the original EditorConfig's cursor
+ * moved in the direction specified
+ * @param e The EditorConfig
+ * @param d The Direction to navigate
+ * @return A new EditorConfig
+ */
 CursorPosition move_cursor(const EditorConfig& e, Direction d)
 {
     const CursorPosition& c = e.m_cursor;

@@ -147,8 +147,8 @@ EditorConfig validate_cursor(const EditorConfig& e, const CursorPosition& curs)
 EditorConfig process_key_press(const EditorConfig& e, const char c)
 {
     if (contains(Constants::nav_keys, c))
-        return EditorConfig(move_cursor(e, get_move_direction(c)), e.m_view_offset_x, e.m_view_offset_y, e.m_content, e.m_do_run);
-    if (c == 'q') return EditorConfig(e.m_cursor, e.m_view_offset_x, e.m_view_offset_y, e.m_content, false);
+        return {move_cursor(e, get_move_direction(c)), e.m_view_offset_x, e.m_view_offset_y, e.m_content, e.m_do_run};
+    if (c == 'q') return {e.m_cursor, e.m_view_offset_x, e.m_view_offset_y, e.m_content, false};
     return e;
 }
 
@@ -214,7 +214,7 @@ termios set_termios_attr(const termios& t)
 
 EditorConfig handle_new_file(const char* file_path)
 {
-    return EditorConfig({0, 0}, 0, 0, open_file(file_path), true);
+    return {{0, 0}, 0, 0, open_file(file_path), true};
 }
 
 void hvim(const EditorConfig& editor_config)
@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
     if (argc > 1)
         hvim(handle_new_file(argv[1]));
     else
-        hvim(EditorConfig({0, 0}, 0, 0, {}, true));
+        hvim({{0, 0}, 0, 0, {}, true});
 
     set_termios_attr(orig_term);
     return 0;
