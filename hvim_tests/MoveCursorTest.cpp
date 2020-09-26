@@ -198,3 +198,28 @@ TEST(MoveCursorTest, MoveDownToLineShorterThanX)
     EXPECT_EQ(e2.m_cursor.x, 1);
     EXPECT_EQ(e2.m_cursor.y, 1);
 }
+
+TEST(MoveCursorTest, MoveDownToEmptyLine)
+{
+    EditorConfig e = {{3, 0}, 0, 0, {"abcd", ""}, true};
+    EXPECT_EQ(e.m_cursor.x, 3);
+    EXPECT_EQ(e.m_cursor.y, 0);
+    EditorConfig e2 = {move_cursor(e, DOWN), 0, 0, e.m_content, true};
+    EXPECT_EQ(e.m_cursor.x, 3);
+    EXPECT_EQ(e.m_cursor.y, 0);
+    EXPECT_EQ(e2.m_cursor.x, 0);
+    EXPECT_EQ(e2.m_cursor.y, 1);
+}
+
+
+TEST(MoveCursorTest, MoveUpToEmptyLine)
+{
+    EditorConfig e = {{0, 1}, 0, 0, {"", "a"}, true};
+    EXPECT_EQ(e.m_cursor.x, 0);
+    EXPECT_EQ(e.m_cursor.y, 1);
+    EditorConfig e2 = {move_cursor(e, UP), 0, 0, e.m_content, true};
+    EXPECT_EQ(e.m_cursor.x, 0);
+    EXPECT_EQ(e.m_cursor.y, 1);
+    EXPECT_EQ(e2.m_cursor.x, 0);
+    EXPECT_EQ(e2.m_cursor.y, 0);
+}

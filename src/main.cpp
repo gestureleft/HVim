@@ -75,7 +75,7 @@ char editor_read_key()
 std::string editor_draw_rows(const EditorConfig& editor_config, const WindowSize& window_dimensions)
 {
     std::string output{};
-    for (int y = editor_config.m_view_offset_y; y < window_dimensions.height; y++)
+    for (int y = 0; y < window_dimensions.height; y++)
     {
         if (y < editor_config.m_content.size())
         {
@@ -153,8 +153,7 @@ std::vector<std::string> open_file(const char* file_path)
     std::string str{};
     while (std::getline(a_file, str))
     {
-        if (str.size() > 0)
-            output.emplace_back(str);
+        output.emplace_back(str);
     }
     a_file.close();
     return output;

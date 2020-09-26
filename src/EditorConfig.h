@@ -49,25 +49,37 @@ CursorPosition move_cursor(const EditorConfig& e, Direction d)
     switch(d)
     {
         case LEFT: {
-            if (c.x > 0)
+            if (e.m_content.at(c.y).length() == 0 || c.x <= 0)
+                return c;
+            else
                 return {c.x - 1, c.y};
-            return c;
         }
         case RIGHT: {
-            if (c.x < e.m_content.at(c.y).length() - 1)
+            if (e.m_content.at(c.y).length() == 0 || c.x >= e.m_content.at(c.y).length() - 1)
+                return c;
+            else
                 return {c.x + 1, c.y};
-            return c;
         }
         case UP: {
             if (c.y > 0)
-                return {c.x > e.m_content.at(c.y - 1).length() - 1 ? e.m_content.at(c.y - 1).length() - 1 : c.x,
+            {
+                if (e.m_content.at(c.y - 1).length() == 0)
+                    return {0, c.y - 1};
+                else
+                    return {c.x > e.m_content.at(c.y - 1).length() - 1 ? e.m_content.at(c.y - 1).length() - 1 : c.x,
                         c.y - 1};
+            }
             return c;
         }
         case DOWN: {
             if (c.y < e.m_content.size() - 1)
-                return {c.x > e.m_content.at(c.y + 1).length() - 1 ? e.m_content.at(c.y + 1).length() - 1 : c.x,
-                        c.y + 1};
+            {
+                if (e.m_content.at(c.y + 1).length() == 0)
+                    return {0, c.y + 1};
+                else
+                    return {c.x > e.m_content.at(c.y + 1).length() - 1 ? e.m_content.at(c.y + 1).length() - 1 : c.x,
+                            c.y + 1};
+            }
             return c;
         }
         case FORWARD: {
