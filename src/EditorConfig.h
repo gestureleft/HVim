@@ -102,9 +102,9 @@ Vector move_cursor(const EditorConfig& e, Direction d)
 
 /**
  * Given a offset value and a cursor value, returns a new offset value that ensures the cursor is within the screen
- * @param offset
- * @param cursor
- * @return
+ * @param offset The current offset
+ * @param cursor The cursor position
+ * @return A new offset
  */
 Vector update_offset(const Vector& offset, const Vector& cursor)
 {
