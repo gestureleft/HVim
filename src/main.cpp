@@ -133,22 +133,6 @@ Direction get_move_direction(const char c)
     return Constants::nav_key_bindings.at(c);
 }
 
-/**
- * Given a cursor and an editor config, checks if the cursor is a valid position for the editor, if so, return a new
- * editor config with the cursor position applied, else, return the original editor config
- * @param e the editor config
- * @param curs the cursor
- */
-EditorConfig validate_cursor(const EditorConfig& e, const CursorPosition& curs)
-{
-    if (curs.x > -1 &&
-        curs.x < e.m_content.at(curs.y).size() &&
-        curs.y > -1 &&
-        curs.y < e.m_content.size())
-        return {curs, e.m_view_offset_x, e.m_view_offset_y, e.m_content, e.m_do_run};
-    return e;
-}
-
 EditorConfig process_key_press(const EditorConfig& e, const char c)
 {
     if (contains(Constants::nav_keys, c))
