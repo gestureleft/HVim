@@ -49,7 +49,7 @@ std::string editor_draw_rows(const EditorConfig& editor_config, const WindowSize
                           " \x1b[0;11m" +
                           editor_config.m_content.at(y + editor_config.m_view_offset.y));
         } else {
-            output.append("~");
+            output.append("\x1b[33m~\x1b[0;11m");
             if (editor_config.m_content.empty() && y == window_dimensions.height/3) {
                 std::string welcome_no_padding = "Welcome to HVim -- Version " + Constants::VERSION;
                 std::string welcome((window_dimensions.width - welcome_no_padding.length()) / 2,' ');
