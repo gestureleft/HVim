@@ -6,7 +6,6 @@
 #include <map>
 #include <unistd.h>
 #include <termios.h>
-#include <sys/ioctl.h>
 #include <optional>
 
 #include "EditorConfig.h"
@@ -26,41 +25,6 @@ namespace Constants
     };
 };
 
-WindowSize get_cursor_position()
-{
-    if (write(STDOUT_FILENO, "\x1b[6n", 4) != 4) throw std::ios_base::failure(""); // Request cursor position
-    // The reply is in the form: \x1b[n;mR, where n is the row and m is the column
-    // The following code gets the cursor position out of this responses.
-
-    std::array<char, 32> in_chars{};
-
-    for (auto& c : in_chars)
-    {
-        if (read(STDIN_FILENO, &c, 1) != 1) break;
-        if (c == 'R') break;
-    }
-
-    if (in_chars.at(0) != '\x1b' || in_chars.at(1) != '[') throw std::ios_base::failure("");
-    WindowSize cursor_pos{};
-    if (std::sscanf(&in_chars.at(2), "%d;%d", &(cursor_pos.height), &(cursor_pos.width)) != 2) throw std::ios_base::failure("");
-
-    return cursor_pos;
-}
-
-WindowSize get_window_size()
-{
-    winsize ws;
-
-    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0)
-    { // ioctl doesn't work on some systems. For those systems, move the cursor to the bottom right of screen and
-        // get cursor position.
-        if (write(STDOUT_FILENO, "\x1b[999C\x1b[999B", 12) != 12) throw std::ios_base::failure("");
-        return get_cursor_position();
-    } else {
-        return {ws.ws_col, ws.ws_row};
-    }
-}
-
 char editor_read_key()
 {
    std::size_t num_read;
@@ -77,13 +41,13 @@ std::string editor_draw_rows(const EditorConfig& editor_config, const WindowSize
     std::string output{};
     for (int y = 0; y < window_dimensions.height; y++)
     {
-        if (y < editor_config.m_content.size())
+        if (y + editor_config.m_view_offset.y < editor_config.m_content.size())
         {
-            output.append(" \x1b[33m" +
-                          std::string(num_digits(editor_config.m_content.size()) - num_digits(y + 1) - 1, ' ') +
-                          std::to_string(y + 1) +
+            output.append("\x1b[33m" +
+                          std::string(num_digits(editor_config.m_content.size()) - num_digits(y + editor_config.m_view_offset.y + 1), ' ') +
+                          std::to_string(y + editor_config.m_view_offset.y + 1) +
                           " \x1b[0;11m" +
-                          editor_config.m_content.at(y + editor_config.m_view_offset_y));
+                          editor_config.m_content.at(y + editor_config.m_view_offset.y));
         } else {
             output.append("~");
             if (editor_config.m_content.empty() && y == window_dimensions.height/3) {
@@ -109,7 +73,7 @@ void editor_refresh_screen(const EditorConfig& editor_config)
     output_str.append(editor_draw_rows(editor_config, get_window_size())); // Draw the content
 
     std::string move_cursor{"\x1b["};
-    move_cursor += std::to_string(editor_config.m_cursor.y + 1) + ";" + std::to_string(editor_config.m_cursor.x + 2 +
+    move_cursor += std::to_string(editor_config.m_cursor.y - editor_config.m_view_offset.y + 1) + ";" + std::to_string(editor_config.m_cursor.x - editor_config.m_view_offset.x + 2 +
             num_digits(editor_config.m_content.size())) + "H";
     output_str.append(move_cursor);
 
@@ -136,8 +100,13 @@ Direction get_move_direction(const char c)
 EditorConfig process_key_press(const EditorConfig& e, const char c)
 {
     if (contains(Constants::nav_keys, c))
-        return {move_cursor(e, get_move_direction(c)), e.m_view_offset_x, e.m_view_offset_y, e.m_content, e.m_do_run};
-    if (c == 'q') return {e.m_cursor, e.m_view_offset_x, e.m_view_offset_y, e.m_content, false};
+        return (
+            [&e](const auto& new_cursor) -> EditorConfig
+            {
+                return {new_cursor, update_offset(e.m_view_offset, new_cursor), e.m_content, e.m_do_run};
+            }
+        )(move_cursor(e, get_move_direction(c)));
+    if (c == 'q') return {e.m_cursor, e.m_view_offset, e.m_content, false};
     return e;
 }
 
@@ -202,7 +171,7 @@ termios set_termios_attr(const termios& t)
 
 EditorConfig handle_new_file(const char* file_path)
 {
-    return {{0, 0}, 0, 0, open_file(file_path), true};
+    return {{0, 0}, {0, 0}, open_file(file_path), true};
 }
 
 void hvim(const EditorConfig& editor_config)
@@ -222,7 +191,7 @@ int main(int argc, char* argv[])
     if (argc > 1)
         hvim(handle_new_file(argv[1]));
     else
-        hvim({{0, 0}, 0, 0, {}, true});
+        hvim({{0, 0}, {0, 0}, {}, true});
 
     set_termios_attr(orig_term);
     return 0;

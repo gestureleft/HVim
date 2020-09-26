@@ -23,4 +23,5 @@ hvim_tests/CMakeFiles/hvimtestsrun.dir/MoveCursorTest.cpp.o: hvim_tests/googlete
 hvim_tests/CMakeFiles/hvimtestsrun.dir/MoveCursorTest.cpp.o: hvim_tests/googletest/googletest/include/gtest/internal/gtest-string.h
 hvim_tests/CMakeFiles/hvimtestsrun.dir/MoveCursorTest.cpp.o: hvim_tests/googletest/googletest/include/gtest/internal/gtest-type-util.h
 hvim_tests/CMakeFiles/hvimtestsrun.dir/MoveCursorTest.cpp.o: src/EditorConfig.h
+hvim_tests/CMakeFiles/hvimtestsrun.dir/MoveCursorTest.cpp.o: src/util.h
 

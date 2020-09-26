@@ -5,11 +5,12 @@
 #ifndef HVIMSRC_EDITORCONFIG_H
 #define HVIMSRC_EDITORCONFIG_H
 
-struct WindowSize
-{
-    int width;
-    int height;
-};
+#include "util.h"
+
+/**
+ * The distance from the edge of the top/bottom of the screen to start scrolling
+ */
+const int DISTANCE_TO_SCROLL = 9;
 
 enum Direction {
     LEFT,
@@ -20,18 +21,16 @@ enum Direction {
     BACK
 };
 
-struct CursorPosition
+struct Vector
 {
     const int x;
     const int y;
-    CursorPosition(const int& x_in, const int& y_in) : x(x_in), y(y_in) {}
 };
 
 struct EditorConfig
 {
-    const CursorPosition m_cursor;
-    const int m_view_offset_x;
-    const int m_view_offset_y;
+    const Vector m_cursor;
+    const Vector m_view_offset;
     const std::vector<std::string> m_content;
     const bool m_do_run;
 };
@@ -43,9 +42,9 @@ struct EditorConfig
  * @param d The Direction to navigate
  * @return A new EditorConfig
  */
-CursorPosition move_cursor(const EditorConfig& e, Direction d)
+Vector move_cursor(const EditorConfig& e, Direction d)
 {
-    const CursorPosition& c = e.m_cursor;
+    const Vector& c = e.m_cursor;
     switch(d)
     {
         case LEFT: {
@@ -66,7 +65,7 @@ CursorPosition move_cursor(const EditorConfig& e, Direction d)
                 if (e.m_content.at(c.y - 1).length() == 0)
                     return {0, c.y - 1};
                 else
-                    return {c.x > e.m_content.at(c.y - 1).length() - 1 ? e.m_content.at(c.y - 1).length() - 1 : c.x,
+                    return {static_cast<int>(c.x > e.m_content.at(c.y - 1).length() - 1 ? e.m_content.at(c.y - 1).length() - 1 : c.x),
                         c.y - 1};
             }
             return c;
@@ -77,7 +76,7 @@ CursorPosition move_cursor(const EditorConfig& e, Direction d)
                 if (e.m_content.at(c.y + 1).length() == 0)
                     return {0, c.y + 1};
                 else
-                    return {c.x > e.m_content.at(c.y + 1).length() - 1 ? e.m_content.at(c.y + 1).length() - 1 : c.x,
+                    return {static_cast<int>(c.x > e.m_content.at(c.y + 1).length() - 1 ? e.m_content.at(c.y + 1).length() - 1 : c.x),
                             c.y + 1};
             }
             return c;
@@ -99,6 +98,20 @@ CursorPosition move_cursor(const EditorConfig& e, Direction d)
         default:
             return c;
     }
+}
+
+/**
+ * Given a offset value and a cursor value, returns a new offset value that ensures the cursor is within the screen
+ * @param offset
+ * @param cursor
+ * @return
+ */
+Vector update_offset(const Vector& offset, const Vector& cursor)
+{
+    // TODO - Implement scrolling up
+    if (get_window_size().height - cursor.y + offset.y < DISTANCE_TO_SCROLL)
+        return {offset.x, offset.y + 1};
+    return offset;
 }
 
 #endif //HVIMSRC_EDITORCONFIG_H
