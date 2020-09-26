@@ -4,13 +4,13 @@
 #include <vector>
 #include <fstream>
 #include <map>
-
 #include <unistd.h>
 #include <termios.h>
 #include <sys/ioctl.h>
 #include <optional>
 
 #include "EditorConfig.h"
+#include "util.h"
 
 namespace Constants
 {
@@ -75,11 +75,15 @@ char editor_read_key()
 std::string editor_draw_rows(const EditorConfig& editor_config, const WindowSize& window_dimensions)
 {
     std::string output{};
-    for (int y = 0; y < window_dimensions.height; y++)
+    for (int y = editor_config.m_view_offset_y; y < window_dimensions.height; y++)
     {
         if (y < editor_config.m_content.size())
         {
-            output.append(editor_config.m_content.at(y + editor_config.m_view_offset_y));
+            output.append(" \x1b[33m" +
+                          std::string(num_digits(editor_config.m_content.size()) - num_digits(y + 1) - 1, ' ') +
+                          std::to_string(y + 1) +
+                          " \x1b[0;11m" +
+                          editor_config.m_content.at(y + editor_config.m_view_offset_y));
         } else {
             output.append("~");
             if (editor_config.m_content.empty() && y == window_dimensions.height/3) {
@@ -105,7 +109,8 @@ void editor_refresh_screen(const EditorConfig& editor_config)
     output_str.append(editor_draw_rows(editor_config, get_window_size())); // Draw the content
 
     std::string move_cursor{"\x1b["};
-    move_cursor += std::to_string(editor_config.m_cursor.y + 1) + ";" + std::to_string(editor_config.m_cursor.x + 1) + "H";
+    move_cursor += std::to_string(editor_config.m_cursor.y + 1) + ";" + std::to_string(editor_config.m_cursor.x + 2 +
+            num_digits(editor_config.m_content.size())) + "H";
     output_str.append(move_cursor);
 
     output_str.append("\x1b[?25h"); // Show the cursor
