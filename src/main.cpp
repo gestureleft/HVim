@@ -3,7 +3,7 @@
 #include <array>
 #include <vector>
 #include <fstream>
-#include <map>
+#include <unordered_map>
 #include <unistd.h>
 #include <termios.h>
 #include <optional>
@@ -15,7 +15,7 @@ namespace Constants
 {
     const std::string VERSION = "0.0.1";
     const std::array<char, 6> nav_keys = {'h', 'j', 'k', 'l', ' ', 127};
-    const std::map<char, Direction> nav_key_bindings = {
+    const std::unordered_map<char, Direction> nav_key_bindings = {
             {nav_keys.at(0), LEFT},
             {nav_keys.at(1), DOWN},
             {nav_keys.at(2), UP},
