@@ -14,14 +14,41 @@
 namespace Constants
 {
     const std::string VERSION = "0.0.1";
-    const std::array<char, 6> nav_keys = {'h', 'j', 'k', 'l', ' ', 127};
     const std::unordered_map<char, Direction> nav_key_bindings = {
-            {nav_keys.at(0), LEFT},
-            {nav_keys.at(1), DOWN},
-            {nav_keys.at(2), UP},
-            {nav_keys.at(3), RIGHT},
-            {nav_keys.at(4), FORWARD},
-            {nav_keys.at(5), BACK}
+            {'h', LEFT},
+            {'j', DOWN},
+            {'k', UP},
+            {'l', RIGHT},
+            {' ', FORWARD},
+            {127, BACK}
+    };
+    const std::unordered_map<char, Mode> switch_mode_key_bindings = {
+            {'i', INSERT},
+            {'v', VISUAL},
+            {':', COMMAND},
+            {'/', SEARCH}
+    };
+    enum Colour {
+        BLACK, RED, GREEN, ORANGE, BLUE, PURPLE, CYAN, L_GRAY, D_GRAY, L_RED, L_GREEN, YELLOW, L_BLUE, L_PURPLE, L_CYAN,
+        WHITE
+    };
+    const std::unordered_map<Colour, std::string> colour_escape_sequences = {
+            {BLACK, "\x1b[0;30m"},
+            {RED, "\x1b[0;31m"},
+            {GREEN, "\x1b[0;32m"},
+            {ORANGE, "\x1b[0;33m"},
+            {BLUE, "\x1b[0;34m"},
+            {PURPLE, "\x1b[0;35m"},
+            {CYAN, "\x1b[0;36m"},
+            {L_GRAY, "\x1b[0;37m"},
+            {D_GRAY, "\x1b[0;90m"},
+            {L_RED, "\x1b[0;91m"},
+            {L_GREEN, "\x1b[0;92m"},
+            {YELLOW, "\x1b[0;93m"},
+            {L_BLUE, "\x1b[0;94m"},
+            {L_PURPLE, "\x1b[0;95m"},
+            {L_CYAN, "\x1b[0;96m"},
+            {WHITE, "\x1b[0;97m"}
     };
 };
 
@@ -36,18 +63,33 @@ char editor_read_key()
    return c;
 }
 
+auto bind_highlight(const std::unordered_map<Constants::Colour, std::string>& colour_map)
+{
+    return [&colour_map](const std::string& string, const Constants::Colour&& colour)->std::string{
+        return colour_map.at(colour) + string + colour_map.at(Constants::Colour::BLACK);
+    };
+}
+
+const auto highlight = bind_highlight(Constants::colour_escape_sequences);
+
 std::string editor_draw_rows(const EditorConfig& editor_config, const WindowSize& window_dimensions)
 {
     std::string output{};
     for (int y = 0; y < window_dimensions.height; y++)
     {
-        if (y + editor_config.m_view_offset.y < editor_config.m_content.size())
+        if (y >= window_dimensions.height - 2) {
+            if (y >= window_dimensions.height - 1 && editor_config.m_mode == Mode::INSERT)
+                output.append("--INSERT--");
+        }
+        else if (y + editor_config.m_view_offset.y < editor_config.m_content.size())
         {
-            output.append("\x1b[33m" +
-                          std::string(num_digits(editor_config.m_content.size()) - num_digits(y + editor_config.m_view_offset.y + 1), ' ') +
-                          std::to_string(y + editor_config.m_view_offset.y + 1) +
-                          " \x1b[0;11m" +
-                          editor_config.m_content.at(y + editor_config.m_view_offset.y));
+            output.append(
+                highlight(
+                    std::string(num_digits(editor_config.m_content.size()) - num_digits(y + editor_config.m_view_offset.y + 1), ' ') +
+                    std::to_string(y + editor_config.m_view_offset.y + 1) + ' ',
+                    Constants::Colour::ORANGE) +
+                highlight(editor_config.m_content.at(y + editor_config.m_view_offset.y), Constants::Colour::PURPLE)
+            );
         } else {
             output.append("\x1b[33m~\x1b[0;11m");
             if (editor_config.m_content.empty() && y == window_dimensions.height/3) {
@@ -73,7 +115,8 @@ void editor_refresh_screen(const EditorConfig& editor_config)
     output_str.append(editor_draw_rows(editor_config, get_window_size())); // Draw the content
 
     std::string move_cursor{"\x1b["};
-    move_cursor += std::to_string(editor_config.m_cursor.y - editor_config.m_view_offset.y + 1) + ";" + std::to_string(editor_config.m_cursor.x - editor_config.m_view_offset.x + 2 +
+    move_cursor += std::to_string(editor_config.m_cursor.y - editor_config.m_view_offset.y + 1) + ";" +
+            std::to_string(editor_config.m_cursor.x - editor_config.m_view_offset.x + 2 +
             num_digits(editor_config.m_content.size())) + "H";
     output_str.append(move_cursor);
 
@@ -82,24 +125,31 @@ void editor_refresh_screen(const EditorConfig& editor_config)
     write(STDOUT_FILENO, output_str.c_str(), output_str.length());
 }
 
-template<typename T, size_t v>
-bool contains(const std::array<T,v> arr, T val)
-{
-    for (T el: arr)
-    {
-        if (el == val) return true;
-    }
-    return false;
-}
-
 Direction get_move_direction(const char c)
 {
     return Constants::nav_key_bindings.at(c);
 }
 
-EditorConfig process_key_press(const EditorConfig& e, const char c)
+/**
+ * Given an unordered_map of characters to Directions, bind said map to a function that, given a character,
+ * returns whether that character is a key in the original unordered_map
+ * @param key_map
+ * @return lambda for checking if a character is in the unordered_map
+ */
+template<typename MappedType>
+auto is_key(const std::unordered_map<char, MappedType>& key_map)
 {
-    if (contains(Constants::nav_keys, c))
+    return [&key_map](const char& c){ return key_map.contains(c); };
+}
+
+const auto is_nav_key = is_key(Constants::nav_key_bindings);
+const auto is_switch_key = is_key(Constants::switch_mode_key_bindings);
+
+EditorConfig process_navigate_key_press(const EditorConfig& e, const char c)
+{
+    if (is_switch_key(c))
+        return {e.m_cursor, e.m_view_offset, e.m_content, e.m_do_run, Constants::switch_mode_key_bindings.at(c)};
+    if (is_nav_key(c))
         return (
             [&e](const auto& new_cursor) -> EditorConfig
             {
@@ -108,6 +158,26 @@ EditorConfig process_key_press(const EditorConfig& e, const char c)
         )(move_cursor(e, get_move_direction(c)));
     if (c == 'q') return {e.m_cursor, e.m_view_offset, e.m_content, false};
     return e;
+}
+
+EditorConfig process_insert_key_press(const EditorConfig& e, const char c)
+{
+    if (c == 27)
+        return {e.m_cursor, e.m_view_offset, e.m_content, e.m_do_run, Mode::NAVIGATE};
+    return e;
+}
+
+EditorConfig process_key_press(const EditorConfig& e, const char c)
+{
+    switch(e.m_mode)
+    {
+        case NAVIGATE: {
+            return process_navigate_key_press(e, c);
+        }
+        case INSERT: {
+            return process_insert_key_press(e, c);
+        }
+    }
 }
 
 /**

@@ -12,6 +12,14 @@
  */
 const int DISTANCE_TO_SCROLL = 9;
 
+enum Mode {
+    NAVIGATE,
+    VISUAL,
+    INSERT,
+    COMMAND,
+    SEARCH
+};
+
 enum Direction {
     LEFT,
     RIGHT,
@@ -33,6 +41,7 @@ struct EditorConfig
     const Vector m_view_offset;
     const std::vector<std::string> m_content;
     const bool m_do_run;
+    const Mode m_mode;
 };
 
 /**
@@ -82,7 +91,7 @@ Vector move_cursor(const EditorConfig& e, Direction d)
             return c;
         }
         case FORWARD: {
-            if (c.x < e.m_content.at(c.y).length() - 1)
+            if (e.m_content.at(c.y).length() != 0 && c.x < e.m_content.at(c.y).length() - 1)
                 return {c.x + 1, c.y};
             return {0, c.y + 1};
         }
