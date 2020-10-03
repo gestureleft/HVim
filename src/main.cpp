@@ -77,22 +77,22 @@ std::string editor_draw_rows(const EditorConfig& editor_config, const WindowSize
     std::string output{};
     for (int y = 0; y < window_dimensions.height; y++)
     {
-        if (y >= window_dimensions.height - 2) {
-            if (y >= window_dimensions.height - 1 && editor_config.m_mode == Mode::INSERT)
-                output.append("--INSERT--");
-        }
-        else if (y + editor_config.m_view_offset.y < editor_config.m_content.size())
+        if (y == window_dimensions.height - 2 && editor_config.mode == Mode::COMMAND)
         {
+            output.append(editor_config.command);
+        } else if (y >= window_dimensions.height - 1 && editor_config.mode == Mode::INSERT) {
+            output.append("--INSERT--");
+        } else if (y + editor_config.view_offset.y < editor_config.content.size()) {
             output.append(
                 highlight(
-                    std::string(num_digits(editor_config.m_content.size()) - num_digits(y + editor_config.m_view_offset.y + 1), ' ') +
-                    std::to_string(y + editor_config.m_view_offset.y + 1) + ' ',
+                    std::string(num_digits(editor_config.content.size()) - num_digits(y + editor_config.view_offset.y + 1), ' ') +
+                    std::to_string(y + editor_config.view_offset.y + 1) + ' ',
                     Constants::Colour::ORANGE) +
-                highlight(editor_config.m_content.at(y + editor_config.m_view_offset.y), Constants::Colour::PURPLE)
+                highlight(editor_config.content.at(y + editor_config.view_offset.y), Constants::Colour::PURPLE)
             );
         } else {
             output.append("\x1b[33m~\x1b[0;11m");
-            if (editor_config.m_content.empty() && y == window_dimensions.height/3) {
+            if (editor_config.content.empty() && y == window_dimensions.height/3) {
                 std::string welcome_no_padding = "Welcome to HVim -- Version " + Constants::VERSION;
                 std::string welcome((window_dimensions.width - welcome_no_padding.length()) / 2,' ');
                 welcome.append(welcome_no_padding);
@@ -115,9 +115,9 @@ void editor_refresh_screen(const EditorConfig& editor_config)
     output_str.append(editor_draw_rows(editor_config, get_window_size())); // Draw the content
 
     std::string move_cursor{"\x1b["};
-    move_cursor += std::to_string(editor_config.m_cursor.y - editor_config.m_view_offset.y + 1) + ";" +
-            std::to_string(editor_config.m_cursor.x - editor_config.m_view_offset.x + 2 +
-            num_digits(editor_config.m_content.size())) + "H";
+    move_cursor += std::to_string(editor_config.cursor.y - editor_config.view_offset.y + 1) + ";" +
+            std::to_string(editor_config.cursor.x - editor_config.view_offset.x + 2 +
+            num_digits(editor_config.content.size())) + "H";
     output_str.append(move_cursor);
 
     output_str.append("\x1b[?25h"); // Show the cursor
@@ -148,28 +148,28 @@ const auto is_switch_key = is_key(Constants::switch_mode_key_bindings);
 EditorConfig process_navigate_key_press(const EditorConfig& e, const char c)
 {
     if (is_switch_key(c))
-        return {e.m_cursor, e.m_view_offset, e.m_content, e.m_do_run, Constants::switch_mode_key_bindings.at(c)};
+        return {e.cursor, e.view_offset, e.content, e.do_run, Constants::switch_mode_key_bindings.at(c)};
     if (is_nav_key(c))
         return (
             [&e](const auto& new_cursor) -> EditorConfig
             {
-                return {new_cursor, update_offset(e.m_view_offset, new_cursor), e.m_content, e.m_do_run};
+                return {new_cursor, update_offset(e.view_offset, new_cursor), e.content, e.do_run};
             }
         )(move_cursor(e, get_move_direction(c)));
-    if (c == 'q') return {e.m_cursor, e.m_view_offset, e.m_content, false};
+    if (c == 'q') return {e.cursor, e.view_offset, e.content, false};
     return e;
 }
 
 EditorConfig process_insert_key_press(const EditorConfig& e, const char c)
 {
     if (c == 27)
-        return {e.m_cursor, e.m_view_offset, e.m_content, e.m_do_run, Mode::NAVIGATE};
+        return {e.cursor, e.view_offset, e.content, e.do_run, Mode::NAVIGATE};
     return e;
 }
 
 EditorConfig process_key_press(const EditorConfig& e, const char c)
 {
-    switch(e.m_mode)
+    switch(e.mode)
     {
         case NAVIGATE: {
             return process_navigate_key_press(e, c);
@@ -247,7 +247,7 @@ EditorConfig handle_new_file(const char* file_path)
 void hvim(const EditorConfig& editor_config)
 {
     editor_refresh_screen(editor_config);
-    if (editor_config.m_do_run)
+    if (editor_config.do_run)
         hvim(process_key_press(editor_config, editor_read_key()));
 }
 

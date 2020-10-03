@@ -37,11 +37,12 @@ struct Vector
 
 struct EditorConfig
 {
-    const Vector m_cursor;
-    const Vector m_view_offset;
-    const std::vector<std::string> m_content;
-    const bool m_do_run;
-    const Mode m_mode;
+    const Vector cursor;
+    const Vector view_offset;
+    const std::vector<std::string> content;
+    const bool do_run;
+    const Mode mode;
+    const std::string command;
 };
 
 /**
@@ -53,17 +54,17 @@ struct EditorConfig
  */
 Vector move_cursor(const EditorConfig& e, Direction d)
 {
-    const Vector& c = e.m_cursor;
+    const Vector& c = e.cursor;
     switch(d)
     {
         case LEFT: {
-            if (e.m_content.at(c.y).length() == 0 || c.x <= 0)
+            if (e.content.at(c.y).length() == 0 || c.x <= 0)
                 return c;
             else
                 return {c.x - 1, c.y};
         }
         case RIGHT: {
-            if (e.m_content.at(c.y).length() == 0 || c.x >= e.m_content.at(c.y).length() - 1)
+            if (e.content.at(c.y).length() == 0 || c.x >= e.content.at(c.y).length() - 1)
                 return c;
             else
                 return {c.x + 1, c.y};
@@ -71,35 +72,35 @@ Vector move_cursor(const EditorConfig& e, Direction d)
         case UP: {
             if (c.y > 0)
             {
-                if (e.m_content.at(c.y - 1).length() == 0)
+                if (e.content.at(c.y - 1).length() == 0)
                     return {0, c.y - 1};
                 else
-                    return {static_cast<int>(c.x > e.m_content.at(c.y - 1).length() - 1 ? e.m_content.at(c.y - 1).length() - 1 : c.x),
+                    return {static_cast<int>(c.x > e.content.at(c.y - 1).length() - 1 ? e.content.at(c.y - 1).length() - 1 : c.x),
                         c.y - 1};
             }
             return c;
         }
         case DOWN: {
-            if (c.y < e.m_content.size() - 1)
+            if (c.y < e.content.size() - 1)
             {
-                if (e.m_content.at(c.y + 1).length() == 0)
+                if (e.content.at(c.y + 1).length() == 0)
                     return {0, c.y + 1};
                 else
-                    return {static_cast<int>(c.x > e.m_content.at(c.y + 1).length() - 1 ? e.m_content.at(c.y + 1).length() - 1 : c.x),
+                    return {static_cast<int>(c.x > e.content.at(c.y + 1).length() - 1 ? e.content.at(c.y + 1).length() - 1 : c.x),
                             c.y + 1};
             }
             return c;
         }
         case FORWARD: {
-            if (e.m_content.at(c.y).length() != 0 && c.x < e.m_content.at(c.y).length() - 1)
+            if (e.content.at(c.y).length() != 0 && c.x < e.content.at(c.y).length() - 1)
                 return {c.x + 1, c.y};
             return {0, c.y + 1};
         }
         case BACK: {
             if (c.x > 0)
                 return {c.x - 1, c.y};
-            if (c.y > 0 && e.m_content.at(c.y - 1).length() > 0)
-                return {static_cast<int>(e.m_content.at(c.y - 1).size() - 1), c.y - 1};
+            if (c.y > 0 && e.content.at(c.y - 1).length() > 0)
+                return {static_cast<int>(e.content.at(c.y - 1).size() - 1), c.y - 1};
             if (c.y > 0)
                 return {0, c.y - 1};
             return {1, 0};
