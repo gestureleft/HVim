@@ -4,12 +4,16 @@
 
 .DS_Store
 
-cmake-**
+cmake-*
 
-cmake_install**
+cmake_install*
 
 CMakeFiles
 
 src/CMakeFiles
 
+bin/*
+
 Makefile
+
+CMakeCache.txt
