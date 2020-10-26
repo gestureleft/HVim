@@ -9,47 +9,48 @@
 #include <optional>
 
 #include "EditorConfig.h"
+#include "CppLexer.h"
 #include "util.h"
 
 namespace Constants
 {
-    const std::string VERSION = "0.0.1";
-    const std::unordered_map<char, Direction> nav_key_bindings = {
-            {'h', LEFT},
-            {'j', DOWN},
-            {'k', UP},
-            {'l', RIGHT},
-            {' ', FORWARD},
-            {127, BACK}
-    };
-    const std::unordered_map<char, Mode> switch_mode_key_bindings = {
-            {'i', INSERT},
-            {'v', VISUAL},
-            {':', COMMAND},
-            {'/', SEARCH}
-    };
-    enum Colour {
-        BLACK, RED, GREEN, ORANGE, BLUE, PURPLE, CYAN, L_GRAY, D_GRAY, L_RED, L_GREEN, YELLOW, L_BLUE, L_PURPLE, L_CYAN,
-        WHITE
-    };
-    const std::unordered_map<Colour, std::string> colour_escape_sequences = {
-            {BLACK, "\x1b[0;30m"},
-            {RED, "\x1b[0;31m"},
-            {GREEN, "\x1b[0;32m"},
-            {ORANGE, "\x1b[0;33m"},
-            {BLUE, "\x1b[0;34m"},
-            {PURPLE, "\x1b[0;35m"},
-            {CYAN, "\x1b[0;36m"},
-            {L_GRAY, "\x1b[0;37m"},
-            {D_GRAY, "\x1b[0;90m"},
-            {L_RED, "\x1b[0;91m"},
-            {L_GREEN, "\x1b[0;92m"},
-            {YELLOW, "\x1b[0;93m"},
-            {L_BLUE, "\x1b[0;94m"},
-            {L_PURPLE, "\x1b[0;95m"},
-            {L_CYAN, "\x1b[0;96m"},
-            {WHITE, "\x1b[0;97m"}
-    };
+   const std::string VERSION = "0.0.1";
+   const std::unordered_map<char, Direction> nav_key_bindings = {
+      {'h', LEFT},
+      {'j', DOWN},
+      {'k', UP},
+      {'l', RIGHT},
+      {' ', FORWARD},
+      {127, BACK}
+   };
+   const std::unordered_map<char, Mode> switch_mode_key_bindings = {
+      {'i', INSERT},
+      {'v', VISUAL},
+      {':', COMMAND},
+      {'/', SEARCH}
+   };
+   enum Colour {
+      BLACK, RED, GREEN, ORANGE, BLUE, PURPLE, CYAN, L_GRAY, D_GRAY, L_RED, L_GREEN, YELLOW, L_BLUE, L_PURPLE, L_CYAN,
+      WHITE
+   };
+   const std::unordered_map<Colour, std::string> colour_escape_sequences = {
+      {BLACK, "\x1b[0;30m"},
+      {RED, "\x1b[0;31m"},
+      {GREEN, "\x1b[0;32m"},
+      {ORANGE, "\x1b[0;33m"},
+      {BLUE, "\x1b[0;34m"},
+      {PURPLE, "\x1b[0;35m"},
+      {CYAN, "\x1b[0;36m"},
+      {L_GRAY, "\x1b[0;37m"},
+      {D_GRAY, "\x1b[0;90m"},
+      {L_RED, "\x1b[0;91m"},
+      {L_GREEN, "\x1b[0;92m"},
+      {YELLOW, "\x1b[0;93m"},
+      {L_BLUE, "\x1b[0;94m"},
+      {L_PURPLE, "\x1b[0;95m"},
+      {L_CYAN, "\x1b[0;96m"},
+      {WHITE, "\x1b[0;97m"}
+   };
 };
 
 char editor_read_key()
@@ -253,7 +254,6 @@ void hvim(const EditorConfig& editor_config)
 
 int main(int argc, char* argv[])
 {
-
     const termios orig_term = get_curr_termios();
     const termios raw_term = make_raw_termios(orig_term);
     set_termios_attr(raw_term);

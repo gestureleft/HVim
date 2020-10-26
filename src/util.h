@@ -74,4 +74,5 @@ WindowSize get_window_size()
     }
 }
 
-#endif
+#endif // HVIMSRC_UTIL_H
+
