@@ -14,43 +14,69 @@
 
 namespace Constants
 {
-   const std::string VERSION = "0.0.1";
-   const std::unordered_map<char, Direction> nav_key_bindings = {
-      {'h', LEFT},
-      {'j', DOWN},
-      {'k', UP},
-      {'l', RIGHT},
-      {' ', FORWARD},
-      {127, BACK}
-   };
-   const std::unordered_map<char, Mode> switch_mode_key_bindings = {
-      {'i', INSERT},
-      {'v', VISUAL},
-      {':', COMMAND},
-      {'/', SEARCH}
-   };
-   enum Colour {
-      BLACK, RED, GREEN, ORANGE, BLUE, PURPLE, CYAN, L_GRAY, D_GRAY, L_RED, L_GREEN, YELLOW, L_BLUE, L_PURPLE, L_CYAN,
-      WHITE
-   };
-   const std::unordered_map<Colour, std::string> colour_escape_sequences = {
-      {BLACK, "\x1b[0;30m"},
-      {RED, "\x1b[0;31m"},
-      {GREEN, "\x1b[0;32m"},
-      {ORANGE, "\x1b[0;33m"},
-      {BLUE, "\x1b[0;34m"},
-      {PURPLE, "\x1b[0;35m"},
-      {CYAN, "\x1b[0;36m"},
-      {L_GRAY, "\x1b[0;37m"},
-      {D_GRAY, "\x1b[0;90m"},
-      {L_RED, "\x1b[0;91m"},
-      {L_GREEN, "\x1b[0;92m"},
-      {YELLOW, "\x1b[0;93m"},
-      {L_BLUE, "\x1b[0;94m"},
-      {L_PURPLE, "\x1b[0;95m"},
-      {L_CYAN, "\x1b[0;96m"},
-      {WHITE, "\x1b[0;97m"}
-   };
+    const std::string VERSION = "0.0.1";
+    const std::unordered_map<char, Direction> nav_key_bindings = {
+        {'h', LEFT},
+        {'j', DOWN},
+        {'k', UP},
+        {'l', RIGHT},
+        {' ', FORWARD},
+        {127, BACK}
+    };
+    const std::unordered_map<char, Mode> switch_mode_key_bindings = {
+        {'i', INSERT},
+        {'v', VISUAL},
+        {':', COMMAND},
+        {'/', SEARCH}
+    };
+    enum Colour {
+        BLACK, RED, GREEN, ORANGE, BLUE, PURPLE, CYAN, L_GRAY, D_GRAY, L_RED, L_GREEN, YELLOW, L_BLUE, L_PURPLE, L_CYAN,
+        WHITE
+    };
+    const std::unordered_map<CppToken::Type, Colour> token_type_colour_map = {
+        {CppToken::Type::Whitespace, WHITE},
+        {CppToken::Type::Keyword,    RED},
+        {CppToken::Type::Unknown,   PURPLE},
+        {CppToken::Type::Unknown, WHITE},
+        {CppToken::Type::Whitespace, WHITE},
+        {CppToken::Type::PreprocessorDirective, WHITE},
+        {CppToken::Type::Char, WHITE},
+        {CppToken::Type::LeftBrace, WHITE},
+        {CppToken::Type::RightBrace, WHITE},
+        {CppToken::Type::LeftBracket, WHITE},
+        {CppToken::Type::RightBracket, WHITE},
+        {CppToken::Type::LeftParen, WHITE},
+        {CppToken::Type::RightParen, WHITE},
+        {CppToken::Type::Asterisk, WHITE},
+        {CppToken::Type::SemiColon, WHITE},
+        {CppToken::Type::Colon, WHITE},
+        {CppToken::Type::String, WHITE},
+        {CppToken::Type::Comma, WHITE},
+        {CppToken::Type::LessThan, WHITE},
+        {CppToken::Type::GreaterThan, WHITE},
+        {CppToken::Type::Comment, WHITE},
+        {CppToken::Type::Number, WHITE},
+        {CppToken::Type::Keyword, WHITE},
+        {CppToken::Type::Identifier, WHITE},
+    };
+    const std::unordered_map<Colour, std::string> colour_escape_sequences = {
+        {BLACK, "\x1b[0;30m"},
+        {RED, "\x1b[0;31m"},
+        {GREEN, "\x1b[0;32m"},
+        {ORANGE, "\x1b[0;33m"},
+        {BLUE, "\x1b[0;34m"},
+        {PURPLE, "\x1b[0;35m"},
+        {CYAN, "\x1b[0;36m"},
+        {L_GRAY, "\x1b[0;37m"},
+        {D_GRAY, "\x1b[0;90m"},
+        {L_RED, "\x1b[0;91m"},
+        {L_GREEN, "\x1b[0;92m"},
+        {YELLOW, "\x1b[0;93m"},
+        {L_BLUE, "\x1b[0;94m"},
+        {L_PURPLE, "\x1b[0;95m"},
+        {L_CYAN, "\x1b[0;96m"},
+        {WHITE, "\x1b[0;97m"}
+    };
 };
 
 char editor_read_key()
@@ -73,6 +99,8 @@ auto bind_highlight(const std::unordered_map<Constants::Colour, std::string>& co
 
 const auto highlight = bind_highlight(Constants::colour_escape_sequences);
 
+// TODO - Refactor so that the output string isn't build on every iteration. Only need to modify this
+// when the user edits the content.
 std::string editor_draw_rows(const EditorConfig& editor_config, const WindowSize& window_dimensions)
 {
     std::string output{};
@@ -84,13 +112,7 @@ std::string editor_draw_rows(const EditorConfig& editor_config, const WindowSize
         } else if (y >= window_dimensions.height - 1 && editor_config.mode == Mode::INSERT) {
             output.append("--INSERT--");
         } else if (y + editor_config.view_offset.y < editor_config.content.size()) {
-            output.append(
-                highlight(
-                    std::string(num_digits(editor_config.content.size()) - num_digits(y + editor_config.view_offset.y + 1), ' ') +
-                    std::to_string(y + editor_config.view_offset.y + 1) + ' ',
-                    Constants::Colour::ORANGE) +
-                highlight(editor_config.content.at(y + editor_config.view_offset.y), Constants::Colour::PURPLE)
-            );
+            // TODO - Implement drawing line based on lexer
         } else {
             output.append("\x1b[33m~\x1b[0;11m");
             if (editor_config.content.empty() && y == window_dimensions.height/3) {

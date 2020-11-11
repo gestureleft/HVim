@@ -10,6 +10,11 @@
 #include <iostream>
 #include <fstream>
 #include <unordered_map>
+#include <string.h>
+
+const size_t CppToken::length() const {
+    return m_view.length();
+}
 
 const char* CppToken::to_string() const {
     switch (m_type)
@@ -50,6 +55,9 @@ const char* CppToken::to_string() const {
         case CppToken::Type::SemiColon: {
             return "SemiColon";
         }
+        case CppToken::Type::Colon: {
+            return "Colon";
+        }
         case CppToken::Type::String: {
             return "String";
         }
@@ -59,8 +67,17 @@ const char* CppToken::to_string() const {
         case CppToken::Type::Comma: {
             return "Comma";
         }
+        case CppToken::Type::LessThan: {
+            return "LessThan";
+        }
+        case CppToken::Type::GreaterThan: {
+            return "GreaterThan";
+        }
         case CppToken::Type::Number: {
             return "Number";
+        }
+        case CppToken::Type::Percent: {
+            return "Perceng";
         }
         case CppToken::Type::Keyword: {
             return "Keyword";
@@ -78,87 +95,73 @@ const bool is_space(const char c)
 
 const bool is_keyword(const std::string_view& str)
 {
-    static std::unordered_map<std::string_view, int> keywords;
-    if (keywords.empty())
-    {
-        keywords.emplace(std::make_pair("asm", 0));
-        keywords.emplace(std::make_pair("auto", 0));
-        keywords.emplace(std::make_pair("bool", 0));
-        keywords.emplace(std::make_pair("break", 0));
-        keywords.emplace(std::make_pair("case", 0));
-        keywords.emplace(std::make_pair("catch", 0));
-        keywords.emplace(std::make_pair("char", 0));
-        keywords.emplace(std::make_pair("class", 0));
-        keywords.emplace(std::make_pair("const", 0));
-        keywords.emplace(std::make_pair("const_cast", 0));
-        keywords.emplace(std::make_pair("continue", 0));
-        keywords.emplace(std::make_pair("default", 0));
-        keywords.emplace(std::make_pair("delete", 0));
-        keywords.emplace(std::make_pair("do", 0));
-        keywords.emplace(std::make_pair("double", 0));
-        keywords.emplace(std::make_pair("dynamic_cast", 0));
-        keywords.emplace(std::make_pair("if", 0));
-        keywords.emplace(std::make_pair("else", 0));
-        keywords.emplace(std::make_pair("enum", 0));
-        keywords.emplace(std::make_pair("explicit", 0));
-        keywords.emplace(std::make_pair("export", 0));
-        keywords.emplace(std::make_pair("extern", 0));
-        keywords.emplace(std::make_pair("false", 0));
-        keywords.emplace(std::make_pair("float", 0));
-        keywords.emplace(std::make_pair("for", 0));
-        keywords.emplace(std::make_pair("friend", 0));
-        keywords.emplace(std::make_pair("inline", 0));
-        keywords.emplace(std::make_pair("int", 0));
-        keywords.emplace(std::make_pair("long", 0));
-        keywords.emplace(std::make_pair("motable", 0));
-        keywords.emplace(std::make_pair("new", 0));
-        keywords.emplace(std::make_pair("operator", 0));
-        keywords.emplace(std::make_pair("protected", 0));
-        keywords.emplace(std::make_pair("public", 0));
-        keywords.emplace(std::make_pair("register", 0));
-        keywords.emplace(std::make_pair("reinterpret_cast", 0));
-        keywords.emplace(std::make_pair("return", 0));
-        keywords.emplace(std::make_pair("short", 0));
-        keywords.emplace(std::make_pair("goto", 0));
-        keywords.emplace(std::make_pair("if", 0));
-        keywords.emplace(std::make_pair("static", 0));
-        keywords.emplace(std::make_pair("static_cast", 0));
-        keywords.emplace(std::make_pair("struct", 0));
-        keywords.emplace(std::make_pair("switch", 0));
-        keywords.emplace(std::make_pair("namespace", 0));
-        keywords.emplace(std::make_pair("this", 0));
-        keywords.emplace(std::make_pair("private", 0));
-        keywords.emplace(std::make_pair("typedef", 0));
-        keywords.emplace(std::make_pair("union", 0));
-        keywords.emplace(std::make_pair("unsigned", 0));
-        keywords.emplace(std::make_pair("signed", 0));
-        keywords.emplace(std::make_pair("sizeof", 0));
-        keywords.emplace(std::make_pair("void", 0));
-        keywords.emplace(std::make_pair("wchar_t", 0));
-        keywords.emplace(std::make_pair("while", 0));
-        keywords.emplace(std::make_pair("throw", 0));
-        keywords.emplace(std::make_pair("true", 0));
-        keywords.emplace(std::make_pair("try", 0));
-        keywords.emplace(std::make_pair("typeid", 0));
-        keywords.emplace(std::make_pair("typename", 0));
-        keywords.emplace(std::make_pair("using", 0));
-        keywords.emplace(std::make_pair("virtual", 0));
-        keywords.emplace(std::make_pair("volatile", 0));
-        keywords.emplace(std::make_pair("template", 0));
-    }
-    return keywords.contains(str);
+    return str == "asm" ||
+           str == "auto" ||
+           str == "bool" ||
+           str == "break" ||
+           str == "case" ||
+           str == "catch" ||
+           str == "char" ||
+           str == "class" ||
+           str == "const" ||
+           str == "const_cast" ||
+           str == "continue" ||
+           str == "default" ||
+           str == "delete" ||
+           str == "do" ||
+           str == "double" ||
+           str == "dynamic_cast" ||
+           str == "if" ||
+           str == "else" ||
+           str == "enum" ||
+           str == "explicit" ||
+           str == "export" ||
+           str == "extern" ||
+           str == "false" ||
+           str == "float" ||
+           str == "for" ||
+           str == "friend" ||
+           str == "inline" ||
+           str == "int" ||
+           str == "long" ||
+           str == "motable" ||
+           str == "new" ||
+           str == "operator" ||
+           str == "protected" ||
+           str == "public" ||
+           str == "register" ||
+           str == "reinterpret_cast" ||
+           str == "return" ||
+           str == "short" ||
+           str == "goto" ||
+           str == "if" ||
+           str == "static" ||
+           str == "static_cast" ||
+           str == "struct" ||
+           str == "switch" ||
+           str == "namespace" ||
+           str == "this" ||
+           str == "private" ||
+           str == "typedef" ||
+           str == "union" ||
+           str == "unsigned" ||
+           str == "signed" ||
+           str == "sizeof" ||
+           str == "void" ||
+           str == "wchar_t" ||
+           str == "while" ||
+           str == "throw" ||
+           str == "true" ||
+           str == "try" ||
+           str == "typeid" ||
+           str == "typename" ||
+           str == "using" ||
+           str == "virtual" ||
+           str == "volatile" ||
+           str == "template";
 }
 
-bool valid_first_character_of_identifier(char ch)
-{
-    return isalpha(ch) || ch == '_' || ch == '$';
-}
-
-bool valid_nonfirst_character_of_identifier(char ch)
-{
-    return valid_first_character_of_identifier(ch) || isdigit(ch);
-}
-
+/*
 std::vector<CppToken> lex(const std::string& content)
 {
     int index { 0 };
@@ -198,6 +201,9 @@ std::vector<CppToken> lex(const std::string& content)
         if (match_char(CppToken::Type::RightBracket, ']')) continue;
         if (match_char(CppToken::Type::LeftBracket,  '[')) continue;
         if (match_char(CppToken::Type::SemiColon,    ';')) continue;
+        if (match_char(CppToken::Type::Colon,        ':')) continue;
+        if (match_char(CppToken::Type::LessThan,     '<')) continue;
+        if (match_char(CppToken::Type::GreaterThan,  '>')) continue;
         if (peek() && peek() == '\'')
         {
             current_token_start_index = index;
@@ -259,39 +265,95 @@ std::vector<CppToken> lex(const std::string& content)
 
     return tokens;
 }
-
-/*
-const CppToken::Type get_type(const std::vector<CppToken>& tokens, const int row, const int col)
-{
-    for (auto token: tokens)
-    {
-        if (token.m_start.col <= col && token.m_end.col >= col &&
-            token.m_start.row <= row && token.m_end.row >= row)
-            return token.m_type;
-    }
-    return CppToken::Type::Unknown;
-}
 */
 
+CppLexer::CppLexer(const char* content) : m_content{content} {
+    m_index = 0;
+    m_length = strlen(content);
+}
 
-int main()
+void CppLexer::reset() {
+    m_index = 0;
+}
+
+void CppLexer::reset(const char* new_content) {
+    m_index = 0;
+    m_content = new_content;
+    m_length = strlen(new_content);
+}
+
+bool is_valid_first_character_of_identifier(char ch) {
+    return isalpha(ch) || ch == '_' || ch == '$';
+}
+
+bool is_valid_nonfirst_character_of_identifier(char ch) {
+    return is_valid_first_character_of_identifier(ch) || isdigit(ch);
+}
+
+char CppLexer::peek(const size_t offset = 0) {
+    if (m_index + offset >= m_length)
+        return '\0';
+    return m_content[m_index + offset];
+}
+
+CppToken::Type match_single_char(const char c) {
+    static const std::unordered_map<char, CppToken::Type> single_chars = {
+        {'{', CppToken::Type::LeftBrace},
+        {'}', CppToken::Type::RightBrace},
+        {'[', CppToken::Type::LeftBracket},
+        {']', CppToken::Type::RightBracket},
+        {'(', CppToken::Type::LeftParen},
+        {')', CppToken::Type::RightParen},
+        {':', CppToken::Type::SemiColon},
+        {'*', CppToken::Type::Asterisk},
+        {'<', CppToken::Type::LessThan},
+        {'>', CppToken::Type::GreaterThan}
+    };
+    if (single_chars.contains(c))
+        return single_chars.at(c);
+    return CppToken::Type::Unknown;
+}
+
+CppToken CppLexer::next_token()
 {
-    std::ifstream file("test_lex.cpp");
-    std::string str{};
-
-    file.seekg(0, std::ios::end);   
-    str.reserve(file.tellg());
-    file.seekg(0, std::ios::beg);
-
-    str.assign((std::istreambuf_iterator<char>(file)),
-                std::istreambuf_iterator<char>());
-
-    file.close();
-
-    const auto tokens = lex(str);
-    for (auto token: tokens)
-    {
-        if (token.m_type != CppToken::Type::Whitespace)
-            std::cout << token.to_string() << ": " << token.m_view << '\n';
+    size_t start_index = m_index;
+    
+    if (peek() == '#') {
+        while (peek() && peek() != '\n') {
+            m_index++;
+        }
+        return { CppToken::Type::PreprocessorDirective, std::string_view(m_content + start_index, m_index - start_index)};
+    } else if (is_space(peek())) {
+        while (peek() && is_space(peek())) {
+            m_index++;
+        }
+        return { CppToken::Type::Whitespace, std::string_view(m_content + start_index, m_index - start_index)};
+    } else if (is_valid_first_character_of_identifier(peek())) {
+        while (peek() && is_valid_nonfirst_character_of_identifier(peek())) {
+            m_index++;
+        }
+        auto token = std::string_view(m_content + start_index, m_index - start_index);
+        if (is_keyword(token))
+            return { CppToken::Type::Keyword, token };
+        return { CppToken::Type::Identifier, token };
+    } else if (peek() == '\'') {
+        m_index++;
+        if (peek() == '\\')
+            m_index++;
+        m_index++;
+        return { CppToken::Type::Char, std::string_view(m_content + start_index, m_index - start_index) };
+    } else if (peek() == '"') {
+        m_index++;
+        while (peek() && peek() != '"') {
+            m_index++;
+            if (peek() == '\\') {
+                m_index += 2;
+            }
+        }
+        return { CppToken::Type::String, std::string_view(m_content + start_index, m_index - start_index) };
     }
+    CppToken::Type type = match_single_char(peek());
+    m_index++;
+    return { type, std::string_view(m_content + start_index, 1) };
+
 }
