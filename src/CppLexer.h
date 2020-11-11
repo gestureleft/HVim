@@ -23,8 +23,17 @@ struct CppToken
         GreaterThan,
         Comment,
         Number,
+        Percent,
+        Tilde,
         Keyword,
-        Identifier
+        Identifier,
+        Ampersand,
+        Pipe,
+        ExplanationMark,
+        Minus,
+        Plus,
+        Equals,
+        Dot
     };
 
     const char* to_string() const;

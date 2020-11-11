@@ -77,13 +77,37 @@ const char* CppToken::to_string() const {
             return "Number";
         }
         case CppToken::Type::Percent: {
-            return "Perceng";
+            return "Percent";
+        }
+        case CppToken::Type::Tilde: {
+            return "Tilde";
         }
         case CppToken::Type::Keyword: {
             return "Keyword";
         }
         case CppToken::Type::Identifier: {
             return "Identifier";
+        }
+        case CppToken::Type::Ampersand: {
+            return "Ampersand";
+        }
+        case CppToken::Type::Pipe: {
+            return "Pipe";
+        }
+        case CppToken::Type::ExplanationMark: {
+            return "ExplanationMark";
+        }
+        case CppToken::Type::Minus: {
+            return "Minus";
+        }
+        case CppToken::Type::Plus: {
+            return "Plus";
+        }
+        case CppToken::Type::Equals: {
+            return "Equals";
+        }
+        case CppToken::Type::Dot: {
+            return "Dot";
         }
     }
 }
@@ -307,7 +331,18 @@ CppToken::Type match_single_char(const char c) {
         {':', CppToken::Type::SemiColon},
         {'*', CppToken::Type::Asterisk},
         {'<', CppToken::Type::LessThan},
-        {'>', CppToken::Type::GreaterThan}
+        {'>', CppToken::Type::GreaterThan},
+        {'%', CppToken::Type::Percent},
+        {'^', CppToken::Type::Tilde},
+        {'&', CppToken::Type::Ampersand},
+        {'|', CppToken::Type::Pipe},
+        {'!', CppToken::Type::ExplanationMark},
+        {'-', CppToken::Type::Minus},
+        {'+', CppToken::Type::Plus},
+        {'=', CppToken::Type::Equals},
+        {';', CppToken::Type::SemiColon},
+        {',', CppToken::Type::Comma},
+        {'.', CppToken::Type::Dot}
     };
     if (single_chars.contains(c))
         return single_chars.at(c);
@@ -340,7 +375,7 @@ CppToken CppLexer::next_token()
         m_index++;
         if (peek() == '\\')
             m_index++;
-        m_index++;
+        m_index += 2;
         return { CppToken::Type::Char, std::string_view(m_content + start_index, m_index - start_index) };
     } else if (peek() == '"') {
         m_index++;
@@ -350,6 +385,7 @@ CppToken CppLexer::next_token()
                 m_index += 2;
             }
         }
+        m_index++;
         return { CppToken::Type::String, std::string_view(m_content + start_index, m_index - start_index) };
     }
     CppToken::Type type = match_single_char(peek());
