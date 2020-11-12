@@ -34,30 +34,36 @@ namespace Constants
         WHITE
     };
     const std::unordered_map<CppToken::Type, Colour> token_type_colour_map = {
-        {CppToken::Type::Whitespace, WHITE},
-        {CppToken::Type::Keyword,    RED},
         {CppToken::Type::Unknown,   PURPLE},
-        {CppToken::Type::Unknown, WHITE},
-        {CppToken::Type::Whitespace, WHITE},
-        {CppToken::Type::PreprocessorDirective, WHITE},
-        {CppToken::Type::Char, WHITE},
-        {CppToken::Type::LeftBrace, WHITE},
-        {CppToken::Type::RightBrace, WHITE},
-        {CppToken::Type::LeftBracket, WHITE},
-        {CppToken::Type::RightBracket, WHITE},
-        {CppToken::Type::LeftParen, WHITE},
-        {CppToken::Type::RightParen, WHITE},
-        {CppToken::Type::Asterisk, WHITE},
-        {CppToken::Type::SemiColon, WHITE},
-        {CppToken::Type::Colon, WHITE},
-        {CppToken::Type::String, WHITE},
-        {CppToken::Type::Comma, WHITE},
-        {CppToken::Type::LessThan, WHITE},
-        {CppToken::Type::GreaterThan, WHITE},
-        {CppToken::Type::Comment, WHITE},
-        {CppToken::Type::Number, WHITE},
-        {CppToken::Type::Keyword, WHITE},
+        {CppToken::Type::Whitespace, GREEN},
+        {CppToken::Type::PreprocessorDirective, PURPLE},
+        {CppToken::Type::Char, GREEN},
+        {CppToken::Type::LeftBrace, GREEN},
+        {CppToken::Type::RightBrace, GREEN},
+        {CppToken::Type::LeftBracket, GREEN},
+        {CppToken::Type::RightBracket, GREEN},
+        {CppToken::Type::LeftParen, GREEN},
+        {CppToken::Type::RightParen, GREEN},
+        {CppToken::Type::Asterisk, GREEN},
+        {CppToken::Type::SemiColon, GREEN},
+        {CppToken::Type::Colon, YELLOW},
+        {CppToken::Type::String, YELLOW},
+        {CppToken::Type::Comma, GREEN},
+        {CppToken::Type::LessThan, GREEN},
+        {CppToken::Type::GreaterThan, GREEN},
+        {CppToken::Type::Comment, GREEN},
+        {CppToken::Type::Number, GREEN},
+        {CppToken::Type::Percent, GREEN},
+        {CppToken::Type::Tilde, GREEN},
+        {CppToken::Type::Keyword,    RED},
         {CppToken::Type::Identifier, WHITE},
+        {CppToken::Type::Ampersand, GREEN},
+        {CppToken::Type::Pipe, GREEN},
+        {CppToken::Type::ExplanationMark, GREEN},
+        {CppToken::Type::Minus, GREEN},
+        {CppToken::Type::Plus, GREEN},
+        {CppToken::Type::Equals, GREEN},
+        {CppToken::Type::Dot, GREEN},
     };
     const std::unordered_map<Colour, std::string> colour_escape_sequences = {
         {BLACK, "\x1b[0;30m"},
@@ -92,8 +98,8 @@ char editor_read_key()
 
 auto bind_highlight(const std::unordered_map<Constants::Colour, std::string>& colour_map)
 {
-    return [&colour_map](const std::string& string, const Constants::Colour&& colour)->std::string{
-        return colour_map.at(colour) + string + colour_map.at(Constants::Colour::BLACK);
+    return [&colour_map](const std::string_view str_view, const Constants::Colour&& colour)->std::string{
+        return colour_map.at(colour) + std::string(str_view) + colour_map.at(Constants::Colour::BLACK);
     };
 }
 
@@ -104,6 +110,8 @@ const auto highlight = bind_highlight(Constants::colour_escape_sequences);
 std::string editor_draw_rows(const EditorConfig& editor_config, const WindowSize& window_dimensions)
 {
     std::string output{};
+    CppLexer lexer{""};
+    CppToken token{CppToken::Type::Unknown, ""};
     for (int y = 0; y < window_dimensions.height; y++)
     {
         if (y == window_dimensions.height - 2 && editor_config.mode == Mode::COMMAND)
@@ -112,7 +120,14 @@ std::string editor_draw_rows(const EditorConfig& editor_config, const WindowSize
         } else if (y >= window_dimensions.height - 1 && editor_config.mode == Mode::INSERT) {
             output.append("--INSERT--");
         } else if (y + editor_config.view_offset.y < editor_config.content.size()) {
-            // TODO - Implement drawing line based on lexer
+            lexer.reset(editor_config.content.at(y + editor_config.view_offset.y).c_str());
+            output.append(highlight(
+                    std::string(num_digits(editor_config.content.size()) - num_digits(y + editor_config.view_offset.y + 1), ' ') +
+                    std::to_string(y + editor_config.view_offset.y + 1) + ' ',
+                    Constants::Colour::ORANGE));
+            while ((token = lexer.next_token()).m_type != CppToken::Type::Unknown) {
+                output.append(highlight(token.m_view, std::move(Constants::token_type_colour_map.at(token.m_type))));
+            }
         } else {
             output.append("\x1b[33m~\x1b[0;11m");
             if (editor_config.content.empty() && y == window_dimensions.height/3) {
