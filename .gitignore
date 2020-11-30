@@ -1,19 +1,8 @@
-.idea
-
 ./build
+
+.idea/
 
 .DS_Store
 
-cmake-*
-
-cmake_install*
-
-CMakeFiles
-
-src/CMakeFiles
-
-bin/*
-
-Makefile
-
-CMakeCache.txt
+**.swp
+**.swo

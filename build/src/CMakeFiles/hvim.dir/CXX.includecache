@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/harrisonmarshall/dev/HVim/src/hvim.cpp
+iostream
+-
+string
+-
+term.hpp
+/Users/harrisonmarshall/dev/HVim/src/term.hpp
+
+/Users/harrisonmarshall/dev/HVim/src/term.hpp
+termios.h
+-
+utility
+-
+string
+-
+

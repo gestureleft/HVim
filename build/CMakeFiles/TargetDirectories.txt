@@ -1,0 +1,5 @@
+/Users/harrisonmarshall/dev/HVim/build/CMakeFiles/rebuild_cache.dir
+/Users/harrisonmarshall/dev/HVim/build/CMakeFiles/edit_cache.dir
+/Users/harrisonmarshall/dev/HVim/build/src/CMakeFiles/rebuild_cache.dir
+/Users/harrisonmarshall/dev/HVim/build/src/CMakeFiles/edit_cache.dir
+/Users/harrisonmarshall/dev/HVim/build/src/CMakeFiles/hvim.dir
