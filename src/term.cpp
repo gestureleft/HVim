@@ -61,22 +61,10 @@ void Term::refresh()
     buffer = "";
 }
 
-void test_colours()
+char Term::readChar()
 {
-    int i = 0;
-    std::string test;
-    while (i <= 255)
-    {
-        std::string test = "\x1b[38;5;" + std::to_string(i) + "m Hello!";
-        write(STDOUT_FILENO, test.c_str(), test.length());
-        i++;
-    }
-    i = 0;
-    while (i <= 255)
-    {
-        std::string test = "\x1b[48;5;" + std::to_string(i) + "m Hello!";
-        write(STDOUT_FILENO, test.c_str(), test.length());
-        i++;
-    }
+    char c{};
+    while (read(STDIN_FILENO, &c, 1) != 1) {}
+    return c;
 }
 

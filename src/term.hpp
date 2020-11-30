@@ -18,6 +18,7 @@ public:
     void refresh();
     size_t getWidth();
     size_t getHeight();
+    char readChar();
 
 private:
     termios original_terminal_settings;
