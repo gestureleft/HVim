@@ -1,3 +1,6 @@
+#ifndef HVIMSRC_TERM_H
+#define HVIMSRC_TERM_H
+
 #include <termios.h>
 #include <utility>
 #include <string>
@@ -27,3 +30,5 @@ private:
     std::pair<int,int> get_cursor_position();
     const Colour default_colour = Colour::White;
 };
+
+#endif // HVIMSRC_TERM_H
