@@ -44,7 +44,8 @@ int main(int argc, char* argv[])
         height = term.getHeight();
         for (auto it = std::begin(content); it != std::end(content) && it != std::begin(content) + height; it++)
         {
-            term.draw(it - std::begin(content), 0, (*it).c_str());
+            term.draw(0, it - std::begin(content), std::to_string(1 + it - std::begin(content)).c_str(), Term::Colour::Blue);
+            term.draw(3, it - std::begin(content), (*it).c_str());
         }
         c = term.readChar();
         if (c == 'q') do_run = false;

@@ -43,7 +43,7 @@ size_t Term::getHeight()
 
 void Term::draw(size_t x, size_t y, const char* content)
 {
-    buffer += "\x1b[" + std::to_string(x) + ";" + std::to_string(y) + "H";
+    buffer += "\x1b[" + std::to_string(y + 1) + ";" + std::to_string(x + 1) + "H";
     buffer.append(content);
 }
 
