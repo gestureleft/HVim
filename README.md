@@ -16,4 +16,6 @@ Requires cmake version >= 3.10
  - press 'Generate'
  - close cmake-gui
  - run ``cmake --build ./build``
- - to run the app run ``./build/src/hvim``
+ - to run the app run ``./build/src/hvim [some file name]``
+
+To quit the application, press the q key
